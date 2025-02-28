@@ -3,7 +3,7 @@ import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import pkg from 'http-proxy';
 const { createProxyServer } = pkg;
-import { createServer as createServerHttp } from 'http';
+import { createServer as createServerHttp, IncomingMessage, ServerResponse } from 'http';
 import { createServer as createServerHttps } from 'https';
 import tls from 'tls';
 
@@ -36,16 +36,70 @@ function getSecureContext(domain) {
     }).context;
 }
 
-// const proxy = createProxyServer();
+const proxy = createProxyServer();
 
-const httpServer = createServerHttp((req, res) => {
+proxy.on('error', (err, req, res) => {
+    console.error(err);
+    if (['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET'].includes(err.code)) {
+        res.writeHead(502, { 'Content-Type': 'text/plain' });
+        res.end('Bad Gateway');
+    } else {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Internal Server Error');
+    }
+});
+
+/**
+ * 
+ * @param {IncomingMessage} req 
+ * @param {ServerResponse} res 
+ * @returns 
+ */
+const webRequest = (req, res) => {
+    if (config.maintenance) {
+        res.writeHead(503, { 'Content-Type': 'text/plain' });
+        res.end('Service Unavailable');
+        return;
+    } else if (config.teapot) {
+        res.writeHead(418, { 'Content-Type': 'text/plain' });
+        res.end('It’s not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!');
+        return;
+    } else if (req.url === '/.well-known/acme-challenge') {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');
+        return;
+    }
     const domain = req.headers.host.split(':')[0];
     const domConf = config.proxy.find(({ host: hosts }) => hosts.includes(domain));
-    console.log('http');
-    console.log(`Request method: ${req.method}, URL: ${req.url}`);
-    res.writeHead(204, { 'Content-Type': 'text/plain' });
-    res.end();
-});
+    if (!domConf) {
+        res.writeHead(502, { 'Content-Type': 'text/plain' });
+        res.end('Bad Gateway');
+        return;
+    } else if (domConf.maintenance) {
+        res.writeHead(503, { 'Content-Type': 'text/plain' });
+        res.end('Service Unavailable');
+        return;
+    } else if (domConf.secure && req.socket.localPort === 80) {
+        res.writeHead(301, { 'Location': `https://${domain}${req.url}` });
+        res.end();
+        return;
+    } else if (domConf.redirect) {
+        res.writeHead(301, { 'Location': domConf.target });
+        res.end();
+        return;
+    } else {
+        return proxy.web(req, res, { 
+            target: domConf.target, 
+            xfwd: true, 
+            ws: domConf.websocket, 
+            websocket: domConf.websocket, 
+            proxyTimeout: domConf.timeout || config.timeout, 
+            headers: domConf.headers || {}
+        });
+    }
+}
+
+const httpServer = createServerHttp(webRequest);
 
 const httpsServer = createServerHttps({
     SNICallback: (hostname, cb) => {
@@ -53,14 +107,7 @@ const httpsServer = createServerHttps({
         const secureContext = getSecureContext(hostname);
         cb(null, secureContext);
     }
-}, (req, res) => {
-    const domain = req.headers.host.split(':')[0];
-    const domConf = config.proxy.find(({ host: hosts }) => hosts.includes(domain));
-    console.log('https');
-    console.log(`Request method: ${req.method}, URL: ${req.url}`);
-    res.writeHead(204, { 'Content-Type': 'text/plain' });
-    res.end();
-});
+}, webRequest);
 
 httpServer.listen(httpPort, () => {
     console.log(`HTTP server listening on port ${httpPort}`);
@@ -69,3 +116,19 @@ httpServer.listen(httpPort, () => {
 httpsServer.listen(httpsPort, () => {
     console.log(`HTTPS server listening on port ${httpsPort}`);
 });
+
+// Test server
+if (config.testserver.enabled) {
+    const testServer = createServerHttp((req, res) => {
+        console.debug('Test server request', req.url);
+        console.debug(req.headers);
+        if (!config.testserver.fail) {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end("Test server");
+        }
+    });
+    
+    testServer.listen(config.testserver.port, () => {
+        console.log(`Test server listening on port ${config.testserver.port}`);
+    });
+}
