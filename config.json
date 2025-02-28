@@ -1,0 +1,25 @@
+{
+    "ports": [80, 443],
+    "ssl": {
+        "key": "certs/localhost/server.key",
+        "cert": "certs/localhost/server.crt",
+        "ca": [
+            "certs/localhost/rootCA.crt"
+        ]
+    },
+    "proxy": [
+        {
+            "host": ["ht-dev.de", "www.ht-dev.de"],
+            "target": "http://localhost:8080",
+            "websockets": true,
+            "secure": true,
+            "ssl": {
+                "key": "certs/ht-dev.de/key.pem",
+                "cert": "certs/ht-dev.de/cert.pem",
+                "ca": [
+                    "certs/ht-dev.de/ca.pem"
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "node-proxy-manager",
+  "version": "1.0.0",
+  "description": "An NodeJS version of Nginx Proxy Manager that is hopefully more reliable.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Hammer1279",
+  "license": "MIT",
+  "dependencies": {
+    "acme-http-01-standalone": "^3.0.5",
+    "greenlock": "^4.0.4",
+    "http-proxy": "^1.18.1",
+    "node-proxy-manager": "file:"
+  },
+  "type": "module"
+}
