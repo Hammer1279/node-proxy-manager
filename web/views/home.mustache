@@ -1,0 +1,82 @@
+<style>
+    .homebody {
+        position: relative;
+        width: 100%;
+        /* overflow: hidden; */
+    }
+    @media screen and (max-width: 535px) {
+        .homebody {
+            overflow: initial;
+        }
+    }
+</style>
+
+<div class="homebody">
+
+    <!-- Text Block -->
+    <div class="text-block" style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        color: white;
+        /* background-color: rgba(0, 0, 0, 0.5); */
+        padding: 20px;
+        box-sizing: border-box;
+        z-index: 10;
+        line-height: 1.5;">
+        <h1 class="h1 text-center">
+            Node Proxy Manager Management Console
+        </h1>
+
+        <h2>
+            <a href="/proxy">Proxy Domains</a>
+        </h2>
+        <p>
+            Allows incoming requests to be proxied to other servers.<br>
+            There are/is {{proxyCount}} configured Proxy Domain(s).
+        </p>
+
+        <h2>
+            <a href="/redirects" style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;">Redirect Domains</a>
+        </h2>
+        <p>
+            This feature is planned for a future release.<br>
+            Allows to redirect domains to other domains.
+        </p>
+
+        <h2>
+            <a href="/port-forwards" style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;">Port Forwards</a>
+        </h2>
+        <p>
+            This feature is planned for a future release.
+        </p>
+
+        <h2>
+            <a href="/stubs" style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;">Stubs</a>
+        </h2>
+        <p>
+            Set custom status codes and responses for domains (like setting them to 404).<br>
+            There are/is {{stubCount}} configured Stub Domain(s).
+        </p>
+        
+        <h2>
+            <a href="/configuration" style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;">Configuration</a>
+        </h2>
+        <p>
+            View current running configuration.<br>
+            Currently listening on ports: {{ports}}
+        </p>
+
+        <h2>
+            <a href="/settings" style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;">Settings</a>
+        </h2>
+        <p>
+            Change settings for {{pkgFullName}}.
+        </p>
+
+    </div>
+
+    <!-- Copyright © Hammer1279 (2025) -->
+
+</div>

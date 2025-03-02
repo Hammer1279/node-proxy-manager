@@ -55,5 +55,20 @@
                 "X-Custom-Header": "customValue"
             }
         }
+    ],
+    "stub": [
+        {
+            "host": ["invalid.host"],
+            "status": 404,
+            "message": "Not Found",
+            "secure": true,
+            "ssl": {
+                "key": "certs/localhost",
+                "cert": "certs/localhost/server.crt",
+                "ca": [
+                    "certs/localhost/rootCA.crt"
+                ]
+            }
+        }  
     ]
 }

@@ -1,0 +1,116 @@
+{
+    "paths": {
+        "get": {
+            "/": {
+                "file": "home",
+                "scripts": ["variables"],
+                "settings": {
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/about": {
+                "file": "about",
+                "scripts": [],
+                "settings": {
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/proxy": {
+                "file": "proxy",
+                "scripts": [],
+                "settings": {
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            // "/admin": {
+            //     "file": "admin",
+            //     "scripts": ["admin"],
+            //     "settings": {
+            //         "subtitle": "Administration",
+            //         "headerTitle": "Administrator Dashboard"
+            //     },
+            //     "restriction": ["admin"]
+            // },
+            // "/admin/*": {
+            //     "file": "serveradmin",
+            //     "scripts": ["serveradmin"],
+            //     "settings": {
+            //         "headerTitle": "Administrator Dashboard"
+            //     },
+            //     "restriction": ["admin"]
+            // },
+        },
+        "post": {
+            // "/register": {
+            //     "file": null,
+            //     "scripts": ["register"],
+            //     "restriction": false
+            // },
+            // "/admin/*": {
+            //     "file": null,
+            //     "scripts": ["serveradmin"],
+            //     "restriction": ["admin"]
+            // }
+        }
+    },
+    "navpages": [
+        {
+            "name": "Home",
+            "url": "/"
+        },
+        {
+            "name": "Proxy",
+            "url": "/proxy"
+        },
+        {
+            "name": "Redirect Domains",
+            "url": "/redirects",
+            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        },
+        {
+            "name": "Port Forwards",
+            "url": "/port-forwards",
+            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        },
+        {
+            "name": "Stubs",
+            "url": "/stubs",
+            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        },
+        {
+            "name": "Configuration",
+            "url": "/configuration",
+            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        },
+        {
+            "name": "Settings",
+            "url": "/settings",
+            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        },
+        {
+            "name": "Admin Page",
+            "url": "/admin",
+            "id": "admin",
+            "style": "visibility: hidden; width: 0; text-wrap: nowrap; margin: 0; padding: 0; display: none;"
+        },
+        {
+            "name": "About",
+            "url": "/about",
+            "id": "about",
+            // "style": "background-color: #f00; color: white; cursor: pointer; float:left; font-family: Orbitron,Arial,Helvetica,sans-serif; font-weight: 700;"
+            // "style": "font-family: Orbitron,Arial,Helvetica,sans-serif; font-weight: 700;"
+        }
+    ]
+}

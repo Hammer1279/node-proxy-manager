@@ -1,0 +1,97 @@
+/* @import url('https://fonts.cdnfonts.com/css/orbitron'); */
+/* @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap'); */
+/* @import url('https://fonts.cdnfonts.com/css/unispace'); */
+
+body {
+    min-height: 400px;
+    margin-bottom: 100px;
+    clear: both;
+    font-family: 'Consolas', 'Arial', sans-serif;
+    /* font-family: 'Orbitron', sans-serif; */
+    font-weight: 300;
+    /* font-family: "Space Grotesk", sans-serif; */
+    /* font-family: 'Unispace', sans-serif; */
+    /* text-shadow: 2px 2px black; */
+    /* text-shadow: 2px 2px 2px black; */
+    text-shadow: 1px 1px 3px black;
+    /* text-shadow: 1px 1px 0 #000,
+    -1px 1px 0 #000,
+    1px -1px 0 #000,
+    -1px -1px 0 #000,
+    0px 1px 0 #000,
+    0px -1px 0 #000,
+    -1px 0px 0 #000,
+    1px 0px 0 #000,
+    2px 2px 0 #000,
+    -2px 2px 0 #000,
+    2px -2px 0 #000,
+    -2px -2px 0 #000,
+    0px 2px 0 #000,
+    0px -2px 0 #000,
+    -2px 0px 0 #000,
+    2px 0px 0 #000,
+    1px 2px 0 #000,
+    -1px 2px 0 #000,
+    1px -2px 0 #000,
+    -1px -2px 0 #000,
+    2px 1px 0 #000,
+    -2px 1px 0 #000,
+    2px -1px 0 #000,
+    -2px -1px 0 #000; */
+}
+
+.btn {
+    text-shadow: inherit;
+}
+
+.form-floating label {
+    text-shadow: 0.5px 0.5px;
+}
+
+/* .shadow {
+    -webkit-filter: drop-shadow( 3px 3px 2px rgba(0, 0, 0, .7));
+    filter: drop-shadow( 3px 3px 2px rgba(0, 0, 0, .7));
+} */
+
+.shadow {
+    -webkit-filter: drop-shadow( 1px 1px 1px black);
+    filter: drop-shadow( 1px 1px 1px black);
+    /* Similar syntax to box-shadow */
+}
+
+@media screen and (max-width: 1000px) {
+    .mobileonly {
+        visibility: unset;
+    }
+    .footer {
+        display: none;
+    }
+    .col-2 {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 535px) {
+    .nomobile {
+        visibility: hidden;
+        clear: both;
+        float: left;
+        margin: 10px auto 5px 20px;
+        width: 28%;
+        display: none;
+    }
+}
+
+@media screen and (min-width: 1000px) {
+    .mobileonly {
+        visibility: hidden;
+        clear: both;
+        float: left;
+        margin: 10px auto 5px 20px;
+        width: 28%;
+        display: none;
+    }
+    /* .nomobile {
+        visibility: unset;
+    } */
+}

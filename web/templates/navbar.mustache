@@ -1,0 +1,86 @@
+<nav class="navbar navbar-expand-lg bg-primary" data-bs-theme="dark">
+    <div class="container-fluid">
+        {{! <a class="navbar-brand" href="#">{{headerTitle\}\}</a> }}
+        <a class="navbar-brand" href="/">
+            <img src="/static/img/logo.jgp" width="35" height="35" class="d-inline-block align-top" alt="">
+            {{headerTitle}}
+        <p class="mobileonly " style="font-size: x-small; margin-bottom: 0; height: 0; text-align: end"><br>&copy; 2025 Copyright: Hammer1279</p>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01"
+            aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarColor01">
+            <ul class="navbar-nav me-auto">
+
+                {{! <li class="nav-item">
+                    <a class="nav-link active" href="#">Home
+                        <span class="visually-hidden">(current)</span>
+                    </a>
+                </li> }}
+
+                {{#pages}}
+                    {{#dropdown}}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{name}}
+                        </a>
+                        <ul class="dropdown-menu">
+                            {{#list}}
+                            <li><a class="dropdown-item" href="{{&url}}">{{title}}</a></li>
+                            {{/list}}
+                        </ul>
+                    </li>
+                    {{/dropdown}}
+                    {{^dropdown}}
+                    <li class="nav-item" {{#id}}id="{{.}}"{{/id}} {{#style}}style="{{.}}"{{/style}}>
+                        <a class="nav-link {{#active}}active{{/active}}" href="{{&url}}">{{name}}</a>
+                    </li>
+                    {{/dropdown}}
+                {{/pages}}
+
+                {{! <li class="nav-item">
+                    <a class="nav-link" href="#">Features</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Pricing</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About</a>
+                </li> }}
+
+                {{! <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+                        aria-haspopup="true" aria-expanded="false">Dropdown</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#">Action</a>
+                        <a class="dropdown-item" href="#">Another action</a>
+                        <a class="dropdown-item" href="#">Something else here</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">Separated link</a>
+                    </div>
+                </li> }}
+
+            </ul>
+
+            {{! <form class="d-flex">
+                <input class="form-control me-sm-2" type="search" placeholder="Search">
+                <button class="btn btn-secondary my-2 my-sm-0 me-2" type="submit">Search</button>
+            </form> }}
+            <div id="log-sect" style="visibility: hidden; width: 0; text-wrap: nowrap; margin: 0; padding: 0; display: none;">
+            <span class="navbar-text me-2" id="nav-log">
+                Logged in as: <a href="/profile"><span id="nav-usr">{{username}}</span></a>
+            </span>
+            <a class="btn btn-secondary" href="javascript:logout()" id="log-btn">Logout</a>
+            </div>
+        </div>
+        <div class="collapse navbar-collapse" id="navbarColor02" style="visibility: hidden; display: none;">
+            <span class="navbar-text me-2" id="nav-log">
+                Unapplied Changes
+                <a class="btn btn-success" href="#" id="apply-btn">Apply</a>
+            </span>
+        </div>
+    </div>
+</nav>

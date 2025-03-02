@@ -14,108 +14,21 @@ const http01 = http01Lib.create({});
 import config from './config.json' with {
     type: "json"
 };
+import { fork } from 'child_process';
 
-const [httpPort, httpsPort] = config.ports;
+let proxyFork = fork('./proxy.js');
 
-// function to pick out the key + certs dynamically based on the domain name
-function getSecureContext(domain) {
-    const files = readdirSync('./certs');
-    const domConf = config.proxy.find(({ host: hosts }) => hosts.includes(domain));
-    if (!domConf) {
-        console.debug(`No configuration found for domain ${domain}`);
-        return tls.createSecureContext({
-            key: readFileSync(config.ssl.key),
-            cert: readFileSync(config.ssl.cert),
-            ca: config.ssl.ca.map(caPath => readFileSync(caPath))
-        });
-    }
-    return tls.createSecureContext({
-        key: readFileSync(domConf.ssl.key),
-        cert: readFileSync(domConf.ssl.cert),
-        ca: domConf.ssl.ca.map(caPath => readFileSync(caPath))
-    }).context;
+const reloadProxy = () => {
+    proxyFork.kill();
+    proxyFork = fork('./proxy.js');
+};
+
+if (config.management.enabled) {
+    const webServerFork = fork("./web/server.js");
+    webServerFork.on("exit", (code) => {
+        console.log(`Web server exited with code ${code}`);
+    });
 }
-
-const proxy = createProxyServer();
-
-proxy.on('error', (err, req, res) => {
-    console.error(err);
-    if (['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET'].includes(err.code)) {
-        res.writeHead(502, { 'Content-Type': 'text/plain' });
-        res.end('Bad Gateway');
-    } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Internal Server Error');
-    }
-});
-
-/**
- * 
- * @param {IncomingMessage} req 
- * @param {ServerResponse} res 
- * @returns 
- */
-const webRequest = (req, res) => {
-    if (config.maintenance) {
-        res.writeHead(503, { 'Content-Type': 'text/plain' });
-        res.end('Service Unavailable');
-        return;
-    } else if (config.teapot) {
-        res.writeHead(418, { 'Content-Type': 'text/plain' });
-        res.end('It’s not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!');
-        return;
-    } else if (req.url === '/.well-known/acme-challenge') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
-        return;
-    }
-    const domain = req.headers.host.split(':')[0];
-    const domConf = config.proxy.find(({ host: hosts }) => hosts.includes(domain));
-    if (!domConf) {
-        res.writeHead(502, { 'Content-Type': 'text/plain' });
-        res.end('Bad Gateway');
-        return;
-    } else if (domConf.maintenance) {
-        res.writeHead(503, { 'Content-Type': 'text/plain' });
-        res.end('Service Unavailable');
-        return;
-    } else if (domConf.secure && req.socket.localPort === 80) {
-        res.writeHead(301, { 'Location': `https://${domain}${req.url}` });
-        res.end();
-        return;
-    } else if (domConf.redirect) {
-        res.writeHead(301, { 'Location': domConf.target });
-        res.end();
-        return;
-    } else {
-        return proxy.web(req, res, { 
-            target: domConf.target, 
-            xfwd: true, 
-            ws: domConf.websocket, 
-            websocket: domConf.websocket, 
-            proxyTimeout: domConf.timeout || config.timeout, 
-            headers: domConf.headers || {}
-        });
-    }
-}
-
-const httpServer = createServerHttp(webRequest);
-
-const httpsServer = createServerHttps({
-    SNICallback: (hostname, cb) => {
-        console.log('SNICallback', hostname);
-        const secureContext = getSecureContext(hostname);
-        cb(null, secureContext);
-    }
-}, webRequest);
-
-httpServer.listen(httpPort, () => {
-    console.log(`HTTP server listening on port ${httpPort}`);
-});
-
-httpsServer.listen(httpsPort, () => {
-    console.log(`HTTPS server listening on port ${httpsPort}`);
-});
 
 // Test server
 if (config.testserver.enabled) {
