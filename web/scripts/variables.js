@@ -12,6 +12,7 @@ export default async (page, { req, res, next }, config) => {
         pkgAuthor: packageJson.author,
         proxyCount: config.proxy.length,
         stubCount: config.stub.length,
+        certCount: config.acme.domains.length,
         ports: config.ports,
     };
 }

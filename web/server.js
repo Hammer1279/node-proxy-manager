@@ -25,6 +25,11 @@ const app = express();
 // app.use(morgan('combined')); // production
 app.use(morgan('dev')); // development
 
+app.use((req, res, next) => {
+    res.setHeader('X-Powered-By', "HT Web-Framework V2-lite");
+    next();
+});
+
 app.use(basicAuth({
     users: { [config.management.username]: config.management.password },
     challenge: true,

@@ -16,7 +16,44 @@ import config from './config.json' with {
 };
 import { fork } from 'child_process';
 
+if (config.acme.enabled) {
+    let acmeFork = fork('./acme.js');
+
+    const reloadAcme = () => {
+        acmeFork.kill();
+        acmeFork = fork('./acme.js');
+    };
+
+    let lastAcmeReload = Date.now();
+
+    setInterval(() => {
+        const now = Date.now();
+        const daysSinceLastReload = (now - lastAcmeReload) / (24 * 60 * 60 * 1000);
+
+        if (daysSinceLastReload >= config.acme.checkInterval) {
+            reloadAcme();
+            lastAcmeReload = now;
+        }
+    }, 60 * 60 * 1000); // Check every hour
+
+    acmeFork.on("exit", (code) => {
+        console.log(`ACME server exited with code ${code}`);
+    });
+
+    acmeFork.on("error", (err) => {
+        console.error("ACME server error:", err);
+    });
+}
+
 let proxyFork = fork('./proxy.js');
+
+proxyFork.on("exit", (code) => {
+    console.log(`Proxy server exited with code ${code}`);
+});
+
+proxyFork.on("error", (err) => {
+    console.error("Proxy server error:", err);
+});
 
 const reloadProxy = () => {
     proxyFork.kill();
@@ -40,7 +77,7 @@ if (config.testserver.enabled) {
             res.end("Test server");
         }
     });
-    
+
     testServer.listen(config.testserver.port, () => {
         console.log(`Test server listening on port ${config.testserver.port}`);
     });

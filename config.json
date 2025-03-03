@@ -13,31 +13,37 @@
         "password": "admin"
     },
     "testserver": {
-        "enabled": true,
+        "enabled": false,
         "_fail": "if enabled, the test server will not respond causing a timeout",
         "fail": false,
         "port": 8080
     },
     "acme": {
-        "_note": "ACME is not yet implemented, it will include automatic SSL certificate generation using Let's Encrypt",
+        "_note": "this client does not seem too reliable, use certbot or acme.sh instead if possible",
         "enabled": false,
-        "email": "root@localhost",
+        "agreeToTerms": true,
+        "directoryUrl": "https://acme-v02.api.letsencrypt.org/directory",
+        "configDir": "certs/acme",
+        "_email": "change this to your email address",
+        "email": "hammer@ht-dev.de",
         "staging": true,
-        "challenge": "http-01",
-        "path": "certs",
-        "renew": 30
+        "checkInterval": 10,
+        "domains": [
+            ["devserv.ht-dev.de"]
+        ]
     },
     "ssl": {
-        "key": "certs/localhost/server.key",
-        "cert": "certs/localhost/server.crt",
+        "key": "certs/acme/live/devserv.ht-dev.de/privkey.pem",
+        "cert": "certs/acme/live/devserv.ht-dev.de/fullchain.pem",
         "ca": [
-            "certs/localhost/rootCA.crt"
+            "certs/acme/live/devserv.ht-dev.de/chain.pem"
         ]
     },
     "_proxy": "Define your proxy rules here, the following is an example",
     "proxy": [
         {
             "host": ["localhost"],
+            "enabled": false,
             "target": "http://localhost:8080",
             "ssl": {
                 "key": "certs/localhost/server.key",
@@ -47,9 +53,30 @@
                 ]
             },
             "redirect": false,
+            "redirectTemp": false,
             "websocket": false,
             "secure": true,
             "maintenance": false,
+            "timeout": 1000,
+            "_headers": {
+                "X-Custom-Header": "customValue"
+            }
+        },
+        {
+            "host": ["devserv.ht-dev.de"],
+            "target": "http://localhost:81",
+            "ssl": {
+                "key": "certs/acme/live/devserv.ht-dev.de/privkey.pem",
+                "cert": "certs/acme/live/devserv.ht-dev.de/fullchain.pem",
+                "ca": [
+                    "certs/acme/live/devserv.ht-dev.de/chain.pem"
+                ]
+            },
+            "redirect": false,
+            "redirectTemp": false,
+            "websocket": false,
+            "secure": true,
+            "maintenance": true,
             "timeout": 1000,
             "_headers": {
                 "X-Custom-Header": "customValue"
@@ -58,7 +85,8 @@
     ],
     "stub": [
         {
-            "host": ["invalid.host"],
+            "host": ["invalid.host", "external-direct-ip"],
+            "enabled": true,
             "status": 404,
             "message": "Not Found",
             "secure": true,
@@ -69,6 +97,20 @@
                     "certs/localhost/rootCA.crt"
                 ]
             }
-        }  
+        },
+        {
+            "host": ["devserv.ht-dev.de"],
+            "enabled": false,
+            "status": 200,
+            "message": "Success",
+            "secure": true,
+            "ssl": {
+                "key": "certs/acme/live/devserv.ht-dev.de/privkey.pem",
+                "cert": "certs/acme/live/devserv.ht-dev.de/fullchain.pem",
+                "ca": [
+                    "certs/acme/live/devserv.ht-dev.de/chain.pem"
+                ]
+            }
+        }
     ]
 }

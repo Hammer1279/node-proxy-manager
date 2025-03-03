@@ -1,0 +1,29 @@
+<h1 class="text-center">Proxies</h1>
+<p>Note: Stubs take precedence over Proxies. If a Stub is configured and enabled for a domain, the Proxy will not be used.</p>
+<div class="row">
+    <div class="col">
+    <a href="/proxy/new" class="btn btn-primary">New Proxy</a>
+    <p class="spacer"></p>
+    {{#proxies}}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{host}}</h5>
+                <p class="card-text">
+                Enabled: {{enabled}}<br>
+                Maintenance: {{maintenance}}<br>
+                Target: <a href="{{target}}" target="_blank">{{target}}</a><br>
+                Redirect Only Mode: {{redirect}}<br>
+                Temporary Redirect: {{redirectTemp}}<br>
+                Timeout: {{timeout}}ms<br>
+                SSL: {{secure}}<br>
+                Custom Headers: {{#headers}}true{{/headers}}{{^headers}}false{{/headers}}<br>
+                </p>
+                <p class="card-text">Description: {{description}}</p>
+                <a href="/proxy/{{id}}/edit" class="btn btn-primary">Edit</a>
+                <a href="/proxy/{{id}}/toggle" class="btn btn-warning">Toggle</a>
+                <a href="/proxy/{{id}}/delete" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+    {{/proxies}}
+    </div>
+</div>

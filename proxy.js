@@ -14,6 +14,7 @@ const http01 = http01Lib.create({});
 import config from './config.json' with {
     type: "json"
 };
+import { handleChallenge } from './acme.js';
 
 const [httpPort, httpsPort] = config.ports;
 
@@ -64,33 +65,51 @@ const webRequest = (req, res) => {
         res.writeHead(418, { 'Content-Type': 'text/plain' });
         res.end('It’s not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!');
         return;
-    } else if (req.url === '/.well-known/acme-challenge') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
+    } else if (req.url.includes('/.well-known/acme-challenge')) {
+        if (config.acme.enabled) {
+            handleChallenge(req, res);
+        } else {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not Found');
+        }
         return;
     }
-    const domain = req.headers.host.split(':')[0];
-    const domConfProxy = config.proxy.find(({ host: hosts }) => hosts.includes(domain));
-    const domConfStub = config.stub.find(({ host: hosts }) => hosts.includes(domain));
-    if (!domConfProxy) {
-        res.writeHead(502, { 'Content-Type': 'text/plain' });
-        res.end('Bad Gateway');
-        return;
-    } else if (domConfProxy.maintenance) {
-        res.writeHead(503, { 'Content-Type': 'text/plain' });
-        res.end('Service Unavailable');
-        return;
-    } else if (domConfProxy.secure && req.socket.localPort === 80) {
-        res.writeHead(301, { 'Location': `https://${domain}${req.url}` });
-        res.end();
-        return;
-    } else if (domConfProxy.redirect) {
-        res.writeHead(301, { 'Location': domConfProxy.target });
-        res.end();
+    const domain = req?.headers?.host?.split(':')[0];
+    let invalidDomain = false;
+    if (!domain) {
+        invalidDomain = "invalid.host";
+    }
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    if (ipv4Regex.test(domain) || ipv6Regex.test(domain)) {
+        invalidDomain = "external-direct-ip";
+    }
+
+    const domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
+    const domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
+    if (!domConfProxy && !domConfStub) { // No configuration found
+        res.writeHead(421, { 'Content-Type': 'text/plain' });
+        res.end('Misdirected Request');
         return;
     } else if (domConfStub) {
         res.writeHead(domConfStub.status || 200, domConfStub.headers || { 'Content-Type': 'text/plain' });
         res.end(domConfStub.message || 'OK');
+        return;
+    } else if (domConfProxy?.maintenance) {
+        res.writeHead(503, { 'Content-Type': 'text/plain' });
+        res.end('Service Unavailable');
+        return;
+    } else if ((domConfProxy?.secure || domConfStub.secure) && req.socket.localPort === 80) {
+        res.writeHead(301, { 'Location': `https://${domain}${req.url}` });
+        res.end();
+        return;
+    } else if ((!(domConfProxy?.secure || domConfStub.secure)) && req.socket.localPort === 443) {
+        res.writeHead(301, { 'Location': `http://${domain}${req.url}` });
+        res.end();
+        return
+    } else if (domConfProxy?.redirect) {
+        res.writeHead(domConfProxy.redirectTemp ? 302 : 301, { 'Location': domConfProxy.target });
+        res.end();
         return;
     } else {
         return proxy.web(req, res, { 

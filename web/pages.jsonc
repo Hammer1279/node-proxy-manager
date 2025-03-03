@@ -14,7 +14,7 @@
             },
             "/about": {
                 "file": "about",
-                "scripts": [],
+                "scripts": ["variables"],
                 "settings": {
                     "stylesheets": [],
                     "scripts": [],
@@ -25,13 +25,40 @@
             },
             "/proxy": {
                 "file": "proxy",
-                "scripts": [],
+                "scripts": ["variables", "proxy"],
                 "settings": {
                     "stylesheets": [],
                     "scripts": [],
                     "widgets": [],
                     "loadbootstrap": true
                 },
+                "restriction": false
+            },
+            "/stubs": {
+                "file": "empty",
+                "scripts": ["variables"],
+                "settings": {
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/acme": {
+                "file": "empty",
+                "scripts": ["variables"],
+                "settings": {
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/configuration": {
+                "file": null,
+                "scripts": ["config"],
                 "restriction": false
             },
             // "/admin": {
@@ -87,12 +114,17 @@
         {
             "name": "Stubs",
             "url": "/stubs",
-            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+            // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        },
+        {
+            "name": "Certificates",
+            "url": "/acme",
+            // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         {
             "name": "Configuration",
             "url": "/configuration",
-            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+            // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         {
             "name": "Settings",
