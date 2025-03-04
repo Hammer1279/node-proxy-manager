@@ -5,6 +5,12 @@
     "maintenance": false,
     "_teapot": "if you don't like this server to brew coffee, you can enable the teapot status code, its the same as maintenance mode, but as a joke",
     "teapot": false,
+    "htcpcp": {
+        "_note": "Allows control over connected coffee pots via HTCPCP",
+        "enabled": true,
+        "port": 418,
+        "rfc-7168": false
+    },
     "management": {
         "_note": "Management interface is not yet implemented, it will include a web interface similar to Nginx Proxy Manager (hopefully)",
         "enabled": false,
@@ -96,13 +102,16 @@
                 "ca": [
                     "certs/localhost/rootCA.crt"
                 ]
+            },
+            "_headers": {
+                "X-Custom-Header": "customValue"
             }
         },
         {
             "host": ["devserv.ht-dev.de"],
-            "enabled": false,
-            "status": 200,
-            "message": "Success",
+            "enabled": true,
+            "status": 418,
+            "message": "I'm a teapot!",
             "secure": true,
             "ssl": {
                 "key": "certs/acme/live/devserv.ht-dev.de/privkey.pem",
@@ -110,6 +119,9 @@
                 "ca": [
                     "certs/acme/live/devserv.ht-dev.de/chain.pem"
                 ]
+            },
+            "headers": {
+                "X-Teapot": "true"
             }
         }
     ]

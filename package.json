@@ -16,6 +16,7 @@
     "express": "^4.21.2",
     "express-basic-auth": "^1.2.1",
     "greenlock": "^4.0.4",
+    "http-parser-js": "^0.5.9",
     "http-proxy": "^1.18.1",
     "jsonc-parser": "^3.3.1",
     "morgan": "^1.10.0",
