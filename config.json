@@ -1,18 +1,36 @@
 {
     "_note": "This is a sample configuration file, values with '_' will be ignored",
-    "ports": [80, 443],
+    "_ports1": "The ports are used for the server, the first port is used for HTTP, the second for HTTPS",
+    "_ports2": "This will be reworked in the future to support multiple ports, while unused, fill in the seperate port configs for future compatibility",
+    "_ports3": "Do not enter more then 2 ports here, it WILL break the server, see note 2 above",
+    "ports": [
+        80,
+        443
+    ],
+    "httpPorts": [
+        80
+    ],
+    "httpsPorts": [
+        443
+    ],
     "timeout": 30000,
+    "_unconfiguredCloseNoResponse": "If enabled, the server will instantly close the connection instead of responding with 421 Misdirected Request",
+    "unconfiguredCloseNoResponse": true,
     "maintenance": false,
     "_teapot": "if you don't like this server to brew coffee, you can enable the teapot status code, its the same as maintenance mode, but as a joke",
     "teapot": false,
     "management": {
         "_note": "Management interface is not yet implemented, it will include a web interface similar to Nginx Proxy Manager (hopefully)",
-        "enabled": false,
+        "enabled": true,
         "port": 81,
+        "_accounts": "Currently only one account is supported, more will be added in the future",
         "username": "admin",
-        "password": "admin"
+        "password": "admin",
+        "logging": false,
+        "logFile": "logs/server.log"
     },
     "testserver": {
+        "_note": "This is a test server, it will respond with a 200 OK, if enabled",
         "enabled": false,
         "_fail": "if enabled, the test server will not respond causing a timeout",
         "fail": false,
@@ -21,18 +39,30 @@
     "acme": {
         "_note": "this client does not seem too reliable, use certbot or acme.sh instead if possible",
         "enabled": false,
-        "agreeToTerms": true,
+        "_terms": "From the directory link, you will find the terms of service, you need to agree to them before using the acme client",
+        "agreeToTerms": false,
         "directoryUrl": "https://acme-v02.api.letsencrypt.org/directory",
         "configDir": "certs/acme",
         "_email": "change this to your email address",
-        "email": "hammer@ht-dev.de",
+        "email": "changme@example.com",
         "staging": true,
         "checkInterval": 10,
         "domains": [
-            ["devserv.ht-dev.de"]
+            [
+                "example.com"
+            ]
+        ]
+    },
+    "_ssl": {
+        "_note": "This is the default ssl configuration for acme, ca is optional (keep empty if unused like this: 'ca: []' )",
+        "key": "certs/acme/live/example.com/privkey.pem",
+        "cert": "certs/acme/live/example.com/fullchain.pem",
+        "ca": [
+            "certs/acme/live/example.com/chain.pem"
         ]
     },
     "ssl": {
+        "_note": "While I'm developing this, I'm using my own domain, you should change this to your own domain",
         "key": "certs/acme/live/devserv.ht-dev.de/privkey.pem",
         "cert": "certs/acme/live/devserv.ht-dev.de/fullchain.pem",
         "ca": [
@@ -42,7 +72,9 @@
     "_proxy": "Define your proxy rules here, the following is an example",
     "proxy": [
         {
-            "host": ["localhost"],
+            "host": [
+                "localhost"
+            ],
             "enabled": false,
             "target": "http://localhost:8080",
             "ssl": {
@@ -55,7 +87,7 @@
             "redirect": false,
             "redirectTemp": false,
             "websocket": false,
-            "secure": true,
+            "secure": false,
             "maintenance": false,
             "timeout": 1000,
             "_headers": {
@@ -63,7 +95,10 @@
             }
         },
         {
-            "host": ["devserv.ht-dev.de"],
+            "host": [
+                "devserv.ht-dev.de"
+            ],
+            "enabled": true,
             "target": "http://localhost:81",
             "ssl": {
                 "key": "certs/acme/live/devserv.ht-dev.de/privkey.pem",
@@ -85,8 +120,13 @@
     ],
     "stub": [
         {
-            "host": ["invalid.host", "external-direct-ip"],
-            "enabled": true,
+            "_note": "This is the response config for any errors, do not remove this",
+            "host": [
+                "invalid.host",
+                "external-direct-ip"
+            ],
+            "enabled": false,
+            "special": true,
             "status": 404,
             "message": "Not Found",
             "secure": true,
@@ -96,11 +136,14 @@
                 "ca": [
                     "certs/localhost/rootCA.crt"
                 ]
-            }
+            },
+            "write_protected": true
         },
         {
-            "host": ["devserv.ht-dev.de"],
-            "enabled": false,
+            "host": [
+                "devserv.ht-dev.de"
+            ],
+            "enabled": true,
             "status": 200,
             "message": "Success",
             "secure": true,

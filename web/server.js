@@ -22,10 +22,25 @@ const pages = parse(fs.readFileSync("./web/pages.jsonc").toString());
 
 const app = express();
 
-// app.use(morgan('combined')); // production
-app.use(morgan('dev')); // development
+app.use(morgan('dev')); // development and console logging
+if (config.management.logging) {
+    // Ensure log file directory exists
+    const logDir = dirname(join(process.cwd(), config.management.logFile));
+    if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+    }
+    fs.appendFileSync(join(process.cwd(), config.management.logFile), `Management Server started at ${new Date().toUTCString()}\n`);
+    app.use(morgan('combined', {
+        stream: fs.createWriteStream(join(process.cwd(), config.management.logFile), { flags: 'a' })
+    })); // production
+    process.once('SIGINT', () => {
+        fs.appendFileSync(join(process.cwd(), config.management.logFile), `Management Server stopped at ${new Date().toUTCString()}\n`);
+        process.exit();
+    });
+}
 
 app.use((req, res, next) => {
+    res.setHeader('Server', "HT Web-Framework V2-lite");
     res.setHeader('X-Powered-By', "HT Web-Framework V2-lite");
     next();
 });
@@ -171,17 +186,8 @@ for (const path in pages.paths.post) {
 }
 
 let settings = {
-    title: 'NPM Management Console',
-    headerTitle: 'Management Console',
-    base_stylesheets: ['bootstrap.css', 'custom.css'],
-    base_scripts: [],
-    loadbootstrap: true,
-    widgets: [
-        { title: 'Server Status', description: 'All servers are operational.' },
-        { title: 'User Activity', description: '5 users are currently online.' },
-    ],
+    ...pages.settings,
     pages: [...pages.navpages],
-    username: "Mr. Anonymous"
 };
 
 app.get('/', async (req, res) => {

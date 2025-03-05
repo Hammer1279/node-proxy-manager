@@ -1,8 +1,8 @@
-<h1 class="text-center">Proxies</h1>
+<h1 class="text-center">Status Pages / Stubs</h1>
 <p>Note: Stubs take precedence over Proxies. If a Stub is configured and enabled for a domain, the Proxy will not be used.</p>
 <div class="row">
     <div class="col">
-    <a href="/proxy/new" class="btn btn-primary">New Proxy</a>
+    <a href="/stub/new" class="btn btn-primary">New Stub</a>
     <a href="#" onclick="applyConfig(event)" class="btn btn-info">Apply Config</a>
     <script>
         function applyConfig(e) {
@@ -21,27 +21,23 @@
         }
     </script>
     <p class="spacer"></p>
-    {{#proxies}}
+    {{#stubs}}
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">{{host}}</h5>
                 <p class="card-text">
                 Enabled: {{enabled}}<br>
                 System Rule: {{special}}<br>
-                Maintenance: {{maintenance}}<br>
-                Target: <a href="{{target}}" target="_blank">{{target}}</a><br>
-                Redirect Only Mode: {{redirect}}<br>
-                Temporary Redirect: {{redirectTemp}}<br>
-                Timeout: {{timeout}}ms<br>
+                Status Code: {{status}} ({{status_message}})<br>
+                Message: "{{message}}"<br>
                 SSL: {{secure}}<br>
-                Custom Headers: {{#headers}}true{{/headers}}{{^headers}}false{{/headers}}<br>
                 </p>
                 <p class="card-text">Description: {{description}}</p>
-                {{^special}}<a href="/proxy/{{id}}/edit" class="btn btn-primary">Edit</a>{{/special}}
-                {{^special}}{{^write_protected}}<a href="/proxy/{{id}}/toggle" class="btn btn-warning">Toggle</a>{{/write_protected}}{{/special}}
-                {{^special}}{{^write_protected}}{{^protected}}<a href="/proxy/{{id}}/delete" class="btn btn-danger">Delete</a>{{/protected}}{{/write_protected}}{{/special}}
+                <a href="/stub/{{id}}/edit" class="btn btn-primary">Edit</a>
+                {{^special}}{{^write_protected}}<a href="/stub/{{id}}/toggle" class="btn btn-warning">Toggle</a>{{/write_protected}}{{/special}}
+                {{^special}}{{^write_protected}}{{^protected}}<a href="/stub/{{id}}/delete" class="btn btn-danger">Delete</a>{{/protected}}{{/write_protected}}{{/special}}
             </div>
         </div>
-    {{/proxies}}
+    {{/stubs}}
     </div>
 </div>

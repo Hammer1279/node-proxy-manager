@@ -7,9 +7,13 @@ import { createServer as createServerHttp, IncomingMessage, ServerResponse } fro
 import { createServer as createServerHttps } from 'https';
 import tls from 'tls';
 
+import { pathToFileURL } from 'url';
+
 import Greenlock from "greenlock";
 import http01Lib from "acme-http-01-standalone";
 const http01 = http01Lib.create({});
+
+
 
 import config from './config.json' with {
     type: "json"
@@ -54,6 +58,13 @@ proxyFork.on("exit", (code) => {
 proxyFork.on("error", (err) => {
     console.error("Proxy server error:", err);
 });
+proxyFork.on("message", (message) => {
+    if (message === 'reload') {
+        reloadProxy();
+    } else {
+        console.log("Unknown message from proxy server:", message);
+    }
+});
 
 const reloadProxy = () => {
     proxyFork.kill();
@@ -65,6 +76,13 @@ if (config.management.enabled) {
     webServerFork.on("exit", (code) => {
         console.log(`Web server exited with code ${code}`);
     });
+    webServerFork.on("message", (message) => {
+        if (message === 'reload') {
+            reloadProxy();
+        } else {
+            console.log("Unknown message from web server:", message);
+        }
+    });
 }
 
 // Test server
@@ -74,7 +92,9 @@ if (config.testserver.enabled) {
         console.debug(req.headers);
         if (!config.testserver.fail) {
             res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end("Test server");
+            res.end("OK");
+        } else {
+            // do nothing, cause a timeout
         }
     });
 

@@ -7,10 +7,6 @@ import { createServer as createServerHttp, IncomingMessage, ServerResponse } fro
 import { createServer as createServerHttps } from 'https';
 import tls from 'tls';
 
-import Greenlock from "greenlock";
-import http01Lib from "acme-http-01-standalone";
-const http01 = http01Lib.create({});
-
 import config from './config.json' with {
     type: "json"
 };
@@ -21,7 +17,11 @@ const [httpPort, httpsPort] = config.ports;
 // function to pick out the key + certs dynamically based on the domain name
 function getSecureContext(domain) {
     const files = readdirSync('./certs');
-    const domConf = config.proxy.find(({ host: hosts }) => hosts.includes(domain));
+    const domConf = [
+        ...config.stub.filter(({ host: hosts }) => hosts.includes(domain)),
+        ...config.proxy.filter(({ host: hosts }) => hosts.includes(domain)),
+    ].find(conf => conf?.secure === true);
+
     if (!domConf) {
         console.debug(`No configuration found for domain ${domain}`);
         return tls.createSecureContext({
@@ -30,6 +30,7 @@ function getSecureContext(domain) {
             ca: config.ssl.ca.map(caPath => readFileSync(caPath))
         });
     }
+
     return tls.createSecureContext({
         key: readFileSync(domConf.ssl.key),
         cert: readFileSync(domConf.ssl.cert),
@@ -65,6 +66,14 @@ const webRequest = (req, res) => {
         res.writeHead(418, { 'Content-Type': 'text/plain' });
         res.end('It’s not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!');
         return;
+    } else if (req.url.includes('/.well-known/status')) {
+        // console.debug(req.headers['user-agent']);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            ok: true,
+            status: 'up'
+        }));
+        return;
     } else if (req.url.includes('/.well-known/acme-challenge')) {
         if (config.acme.enabled) {
             handleChallenge(req, res);
@@ -88,8 +97,12 @@ const webRequest = (req, res) => {
     const domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
     const domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
     if (!domConfProxy && !domConfStub) { // No configuration found
-        res.writeHead(421, { 'Content-Type': 'text/plain' });
-        res.end('Misdirected Request');
+        if (config.unconfiguredCloseNoResponse) {
+            res.destroy();
+        } else {
+            res.writeHead(421, { 'Content-Type': 'text/plain' });
+            res.end('Misdirected Request');
+        }
         return;
     } else if (domConfStub) {
         res.writeHead(domConfStub.status || 200, domConfStub.headers || { 'Content-Type': 'text/plain' });
@@ -112,12 +125,12 @@ const webRequest = (req, res) => {
         res.end();
         return;
     } else {
-        return proxy.web(req, res, { 
-            target: domConfProxy.target, 
-            xfwd: true, 
-            ws: domConfProxy.websocket, 
-            websocket: domConfProxy.websocket, 
-            proxyTimeout: domConfProxy.timeout || config.timeout, 
+        return proxy.web(req, res, {
+            target: domConfProxy.target,
+            xfwd: true,
+            ws: domConfProxy.websocket,
+            websocket: domConfProxy.websocket,
+            proxyTimeout: domConfProxy.timeout || config.timeout,
             headers: domConfProxy.headers || {}
         });
     }

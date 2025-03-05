@@ -25,7 +25,7 @@
             },
             "/proxy": {
                 "file": "proxy",
-                "scripts": ["variables", "proxy"],
+                "scripts": ["variables", "confContext"],
                 "settings": {
                     "stylesheets": [],
                     "scripts": [],
@@ -34,9 +34,41 @@
                 },
                 "restriction": false
             },
-            "/stubs": {
+            "/proxy/*/toggle": {
+                "file": null,
+                "scripts": ["toggle"],
+                "restriction": false
+            },
+            "/proxy/*": {
                 "file": "empty",
-                "scripts": ["variables"],
+                "scripts": ["variables", "confContext", "urlContext", "noDetails"],
+                "settings": {
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/stub": {
+                "file": "stubs",
+                "scripts": ["variables", "confContext"],
+                "settings": {
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/stub/*/toggle": {
+                "file": null,
+                "scripts": ["toggle"],
+                "restriction": false
+            },
+            "/stub/*": {
+                "file": "empty",
+                "scripts": ["variables", "confContext", "urlContext", "noDetails"],
                 "settings": {
                     "stylesheets": [],
                     "scripts": [],
@@ -56,7 +88,7 @@
                 },
                 "restriction": false
             },
-            "/configuration": {
+            "/config": {
                 "file": null,
                 "scripts": ["config"],
                 "restriction": false
@@ -80,6 +112,16 @@
             // },
         },
         "post": {
+            "/proxy/*": {
+                "file": null,
+                "scripts": ["update"],
+                "restriction": false
+            },
+            "/config/apply": {
+                "file": null,
+                "scripts": ["restartProxy"],
+                "restriction": false
+            },
             // "/register": {
             //     "file": null,
             //     "scripts": ["register"],
@@ -113,7 +155,7 @@
         },
         {
             "name": "Stubs",
-            "url": "/stubs",
+            "url": "/stub",
             // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         {
@@ -123,7 +165,7 @@
         },
         {
             "name": "Configuration",
-            "url": "/configuration",
+            "url": "/config",
             // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         {
@@ -144,5 +186,17 @@
             // "style": "background-color: #f00; color: white; cursor: pointer; float:left; font-family: Orbitron,Arial,Helvetica,sans-serif; font-weight: 700;"
             // "style": "font-family: Orbitron,Arial,Helvetica,sans-serif; font-weight: 700;"
         }
-    ]
+    ],
+    "settings": {
+        "title": "NPM Management Console", // tab title
+        "headerTitle": "Management Console", // title in navbar
+        // base_* are the default stylesheets and scripts (client side) to load on every page
+        "base_stylesheets": ["bootstrap.css", "custom.css"],
+        "base_scripts": [],
+        "loadbootstrap": true,
+        "widgets": [], // not implemented in this version
+        "username": "Mr. Anonymous",
+        "default_language": "en", // cannot be changed yet
+        "timezone": "local" // cannot be changed yet
+    }
 }
