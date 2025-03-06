@@ -64,7 +64,9 @@ function getSecureContext(domain) {
     }
 }
 
-const proxy = createProxyServer();
+const proxy = createProxyServer({
+    secure: false // Allow self-signed certificates
+});
 
 proxy.on('error', (err, req, res) => {
     console.error(err);
