@@ -11,6 +11,7 @@ import config from './config.json' with {
     type: "json"
 };
 import { handleChallenge } from './acme.js';
+import forge from 'node-forge';
 
 const [httpPort, httpsPort] = config.ports;
 
@@ -22,20 +23,45 @@ function getSecureContext(domain) {
         ...config.proxy.filter(({ host: hosts }) => hosts.includes(domain)),
     ].find(conf => conf?.secure === true);
 
-    if (!domConf) {
-        console.debug(`No configuration found for domain ${domain}`);
+    try {
+        if (!domConf) {
+            console.debug(`No configuration found for domain ${domain}`);
+            return tls.createSecureContext({
+                key: readFileSync(config.ssl.key),
+                cert: readFileSync(config.ssl.cert),
+                ca: config.ssl.ca.map(caPath => readFileSync(caPath))
+            });
+        }
+
         return tls.createSecureContext({
-            key: readFileSync(config.ssl.key),
-            cert: readFileSync(config.ssl.cert),
-            ca: config.ssl.ca.map(caPath => readFileSync(caPath))
+            key: readFileSync(domConf.ssl.key),
+            cert: readFileSync(domConf.ssl.cert),
+            ca: domConf.ssl.ca.map(caPath => readFileSync(caPath))
+        }).context;
+    } catch (error) {
+        console.error(`Error loading certificates for ${domain}:`, error);
+        // Generate a self-signed certificate
+        const pki = forge.pki;
+        const keys = pki.rsa.generateKeyPair(2048);
+        const cert = pki.createCertificate();
+        cert.publicKey = keys.publicKey;
+        cert.serialNumber = '00';
+        cert.validity.notBefore = new Date();
+        cert.validity.notAfter = new Date();
+        cert.validity.notAfter.setHours(cert.validity.notBefore.getHours() + 1);
+        const attrs = [{
+            name: 'commonName',
+            value: domain
+        }];
+        cert.setSubject(attrs);
+        cert.setIssuer(attrs);
+        cert.sign(keys.privateKey);
+
+        return tls.createSecureContext({
+            key: pki.privateKeyToPem(keys.privateKey),
+            cert: pki.certificateToPem(cert)
         });
     }
-
-    return tls.createSecureContext({
-        key: readFileSync(domConf.ssl.key),
-        cert: readFileSync(domConf.ssl.cert),
-        ca: domConf.ssl.ca.map(caPath => readFileSync(caPath))
-    }).context;
 }
 
 const proxy = createProxyServer();
