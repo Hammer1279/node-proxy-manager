@@ -29,6 +29,8 @@ An NodeJS version of Nginx Proxy Manager that is hopefully more reliable.
 3. Save the current Application list: `pm2 save`
 4. Enable PM2 startup `pm2 startup`
 
+You can check the status with `pm2 status` and restart the application with `pm2 restart all` (Or instead of `all` you can use the index number found in status).
+
 ## Can I rely on this project to not shut down and get abandoned soon?
 Despite my repositories mostly beeing archived, I plan on keeping this updated as long as I can. My own Websites all depend on this software, so I always have a incentive to develop this further and keep it maintained to the best of my abilities.
 
@@ -39,4 +41,4 @@ As a previous user of Nginx Proxy Manager, I was actually quite happy with it.
 The Issue was that the community seems to either be very elitist or have not really wanted to help at all.
 I keep having the issue where all connections just end in this "black hole" of the Docker Container. If you bring this up, you will get told its simply a skill issue and a you problem, nothing to help at all.
 
-Thats why I've decided to create a simmilar alternative that is a complete suite by itself without depending on solutions like Docker
+Thats why I've decided to create a simmilar alternative that is a complete suite by itself without depending on solutions like Docker.
