@@ -32,6 +32,7 @@
     "testserver": {
         "_note": "This is a test server, it will respond with a 200 OK, if enabled",
         "enabled": false,
+        "websocket": true,
         "_fail": "if enabled, the test server will not respond causing a timeout",
         "fail": false,
         "port": 8080
@@ -86,7 +87,7 @@
             },
             "redirect": false,
             "redirectTemp": false,
-            "websocket": false,
+            "websocket": true,
             "secure": false,
             "maintenance": false,
             "timeout": 1000,

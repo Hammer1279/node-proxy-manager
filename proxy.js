@@ -12,6 +12,7 @@ import config from './config.json' with {
 };
 import { handleChallenge } from './acme.js';
 import forge from 'node-forge';
+import { Socket } from 'net';
 
 const [httpPort, httpsPort] = config.ports;
 
@@ -65,7 +66,8 @@ function getSecureContext(domain) {
 }
 
 const proxy = createProxyServer({
-    secure: false // Allow self-signed certificates
+    secure: false, // Allow self-signed certificates,
+    ws: true
 });
 
 proxy.on('error', (err, req, res) => {
@@ -80,12 +82,13 @@ proxy.on('error', (err, req, res) => {
 });
 
 /**
- * 
+ * Handle HTTP/S requests
  * @param {IncomingMessage} req 
  * @param {ServerResponse} res 
  * @returns 
  */
 const webRequest = (req, res) => {
+    // console.debug('HTTP request', req.url);
     if (config.maintenance) {
         res.writeHead(503, { 'Content-Type': 'text/plain' });
         res.end('Service Unavailable');
@@ -164,6 +167,28 @@ const webRequest = (req, res) => {
     }
 }
 
+/**
+ * Handle WebSocket requests
+ * @param {IncomingMessage} req 
+ * @param {Socket} socket 
+ * @param {Buffer} head 
+ */
+const wsRequest = (req, socket, head) => {
+    // console.debug('WS request', req.url);
+    const domain = req?.headers?.host?.split(':')[0];
+    const domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(domain));
+    if (domConfProxy && domConfProxy.websocket) {
+        proxy.ws(req, socket, head, {
+            target: domConfProxy.target,
+            xfwd: true,
+            proxyTimeout: domConfProxy.timeout || config.timeout,
+            headers: domConfProxy.headers || {}
+        });
+    } else {
+        socket.destroy();
+    }
+}
+
 const httpServer = createServerHttp(webRequest);
 
 const httpsServer = createServerHttps({
@@ -173,6 +198,9 @@ const httpsServer = createServerHttps({
         cb(null, secureContext);
     }
 }, webRequest);
+
+httpServer.on('upgrade', wsRequest);
+httpsServer.on('upgrade', wsRequest);
 
 httpServer.listen(httpPort, () => {
     console.log(`HTTP server listening on port ${httpPort}`);

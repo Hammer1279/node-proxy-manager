@@ -7,6 +7,8 @@ import { createServer as createServerHttp, IncomingMessage, ServerResponse } fro
 import { createServer as createServerHttps } from 'https';
 import tls from 'tls';
 
+import WebSocket, { WebSocketServer } from 'ws';
+
 import { pathToFileURL } from 'url';
 
 import Greenlock from "greenlock";
@@ -101,4 +103,27 @@ if (config.testserver.enabled) {
     testServer.listen(config.testserver.port, () => {
         console.log(`Test server listening on port ${config.testserver.port}`);
     });
+
+    if (config.testserver.websocket) {
+        const wss = new WebSocketServer({
+            server: testServer
+        });
+
+        wss.on("headers", (headers, req) => {
+            console.log('Test server WebSocket headers:', headers, req.url);
+        });
+
+        wss.on('connection', (ws, req) => {
+            console.log('Test server WebSocket connection');
+            // console.debug('Test server WebSocket headers:', ws.protocol, ws._socket.server._connectionKey);
+            ws.on('message', (message) => {
+                console.log('Test server WebSocket message:', message.toString());
+                ws.send(message.toString());
+            });
+            ws.send('Hello from the test server!');
+            setTimeout(() => {
+                ws.close(1000, 'Goodbye: timeout');
+            }, 10000);
+        });
+    }
 }
