@@ -2,7 +2,7 @@
   "name": "node-proxy-manager",
   "fullname": "Node Proxy Manager",
   "version": "1.0.0",
-  "description": "An NodeJS version of Nginx Proxy Manager that is hopefully more reliable.",
+  "description": "An NodeJS alternative to Nginx Proxy Manager that is hopefully more reliable.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
