@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import { fileURLToPath } from 'url';
 import { readFile } from 'fs/promises';
 import { mustache } from "consolidate";
+import { renderFile, render as ejsRender } from 'ejs';
 
 import config from '../config.json' with {
     type: "json"
@@ -55,7 +56,10 @@ app.use(basicAuth({
 app.set('views', join(__dirname, 'views'));
 app.engine('mustache', mustache);
 app.set('view engine', 'mustache');
+app.engine('ejs', renderFile);
 app.use(express.json());
+
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/static", express.static(join(process.cwd(), 'web', 'public')));
 
@@ -68,8 +72,20 @@ async function render(req, res, view, context, cb) {
         element.active = req.url == element.url;
     });
 
-    partials['view'] = join(viewsDir, view + ".mustache")
-    res.render(partials['base'], { ...context, partials: partials }, cb);
+    if (context.type == "ejs") {
+        console.debug("Rendering EJS");
+        const ejsResult = await renderFile(join(viewsDir, view + ".ejs"), context);
+        partials['view'] = join(partialsDir, 'ejs.mustache');
+        res.render(partials['base'], { ...context, partials: partials, ejs: ejsResult }, cb);
+        return;
+    } else {
+        if (context.type && context.type != "mustache") {
+            throw new Error("Unknown template type: " + context.type);
+        }
+        // Add current view
+        partials['view'] = join(viewsDir, view + ".mustache");
+        res.render(partials['base'], { ...context, partials: partials }, cb);
+    }
 }
 
 function isJSON(str) {
@@ -97,15 +113,19 @@ for (const path in pages.paths.get) {
             app.get(path, async (req, res, next) => {
                 let patches = {}
                 if (element.scripts) {
-                    for await (const file of element.scripts) {
-                        const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
-                        let result = module.get ? await module.get(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
-                        if (isJSON(result) && !(result?.done ?? false)) {
-                            patches = { ...patches, ...result }
-                        } else {
-                            console.debug("Request already handled, returning...")
-                            return;
+                    try {
+                        for await (const file of element.scripts) {
+                            const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                            let result = module.get ? await module.get(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                            if (isJSON(result) && !(result?.done ?? false)) {
+                                patches = { ...patches, ...result }
+                            } else {
+                                console.debug("Request already handled, returning...")
+                                return;
+                            }
                         }
+                    } catch (error) {
+                        return next(error);
                     }
                 }
                 if (element.settings && element.settings.subtitle) {
@@ -117,18 +137,24 @@ for (const path in pages.paths.get) {
                 } else {
                     // TODO: add way to handle the script already handling requests and then skip this
                     try {
-                        render(req, res, element.file, context);
+                        await render(req, res, element.file, context);
                     } catch (error) {
+                        // TODO: check why errors are just ignored
                         console.debug(error);
+                        // return next(error);
                     }
                 }
             })
         } else {
             app.get(path, async (req, res, next) => {
                 if (element.scripts) {
-                    for await (const file of element.scripts) {
-                        const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
-                        module.get ? await module.get(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                    try {
+                        for await (const file of element.scripts) {
+                            const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                            module.get ? await module.get(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                        }
+                    } catch (error) {
+                        return next(error);
                     }
                 } else {
                     next();
@@ -144,15 +170,19 @@ for (const path in pages.paths.post) {
             app.post(path, async (req, res, next) => {
                 let patches = {}
                 if (element.scripts) {
-                    for await (const file of element.scripts) {
-                        const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
-                        let result = module.post ? await module.post(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
-                        if (isJSON(result) && !(result?.done ?? false)) {
-                            patches = { ...patches, ...result }
-                        } else {
-                            console.debug("Request already handled, returning...")
-                            return;
+                    try {
+                        for await (const file of element.scripts) {
+                            const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                            let result = module.post ? await module.post(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                            if (isJSON(result) && !(result?.done ?? false)) {
+                                patches = { ...patches, ...result }
+                            } else {
+                                console.debug("Request already handled, returning...")
+                                return;
+                            }
                         }
+                    } catch (error) {
+                        return next(error);
                     }
                 }
                 if (element.settings && element.settings.subtitle) {
@@ -164,18 +194,24 @@ for (const path in pages.paths.post) {
                 } else {
                     // TODO: add way to handle the script already handling requests and then skip this
                     try {
-                        render(req, res, element.file, context);
+                        await render(req, res, element.file, context);
                     } catch (error) {
+                        // TODO: check why errors are just ignored
                         console.debug(error);
+                        // return next(error);
                     }
                 }
             })
         } else {
             app.post(path, async (req, res, next) => {
                 if (element.scripts) {
-                    for await (const file of element.scripts) {
-                        const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
-                        module.post ? await module.post(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                    try {
+                        for await (const file of element.scripts) {
+                            const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                            module.post ? await module.post(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                        }
+                    } catch (error) {
+                        return next(error);
                     }
                 } else {
                     next();
@@ -201,6 +237,18 @@ app.get('/', async (req, res) => {
     }
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    // res.status(500).json({
+    //     error: 'Internal Server Error',
+    //     message: err.message,
+    //     stack: err.stack
+    // });
+    res.status(500).send(`<title>ERR: ${err.message}</title><h1>500: Internal Server Error</h1><p>${err.stack.replaceAll('\n', "<br />")}</p>`);
+});
+
 app.listen(config.management.port, () => {
     console.log(`Management server listening on port ${config.management.port}`);
 });
+

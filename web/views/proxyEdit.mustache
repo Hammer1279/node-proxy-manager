@@ -1,0 +1,102 @@
+<h1 class="text-center">Edit: Proxy {{id}}</h1>
+<p>Redirect Hosts are planned to be separated from Proxies, the use in proxy-conf is thereby deprecated and only possible with the config file.</p>
+<div class="row">
+    <div class="col">
+    <form id="proxyForm" class="needs-validation" method="POST" action="/{{prefix}}/{{id}}" novalidate>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Description (optional)</label>
+            <textarea class="form-control" id="description" name="description" rows="3">{{item.description}}</textarea>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="hidden" name="enabled" value="off">
+            <input type="checkbox" class="form-check-input" id="enabled" name="enabled" value="on" {{#item.enabled}}checked{{/item.enabled}}>
+            <label class="form-check-label" for="enabled">Enabled</label>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="hidden" name="maintenance" value="off">
+            <input type="checkbox" class="form-check-input" id="maintenance" name="maintenance" value="on" {{#item.maintenance}}checked{{/item.maintenance}}>
+            <label class="form-check-label" for="maintenance">Maintenance Mode</label>
+        </div>
+
+        <div class="mb-3">
+            <label for="host" class="form-label">Hosts (comma separated)</label>
+            <textarea class="form-control" id="host" name="host" rows="2" required>{{item.host}}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="target" class="form-label">Target</label>
+            <input type="url" class="form-control" id="target" name="target" value="{{item.target}}">
+        </div>
+
+        <div class="mb-3">
+            <label for="timeout" class="form-label">Timeout (ms)</label>
+            <input type="number" class="form-control" id="timeout" name="timeout" value="{{item.timeout}}">
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="hidden" name="secure" value="off">
+            <input type="checkbox" class="form-check-input" id="secure" name="secure" {{#item.secure}}checked{{/item.secure}}>
+            <label class="form-check-label" for="secure">Force TLS/SSL (HTTPS)</label>
+        </div>
+
+        <div class="ssl-config">
+            <h4>SSL Configuration</h4>
+            <div class="mb-3">
+                <label for="sslKey" class="form-label">SSL Key Path</label>
+                <input type="text" class="form-control" id="sslKey" name="ssl[key]" value="{{item.ssl.key}}">
+            </div>
+
+            <div class="mb-3">
+                <label for="sslCert" class="form-label">SSL Certificate Path</label>
+                <input type="text" class="form-control" id="sslCert" name="ssl[cert]" value="{{item.ssl.cert}}">
+            </div>
+
+            <div class="mb-3">
+                <label for="sslCa" class="form-label">SSL CA Path (comma separated)</label>
+                <textarea class="form-control" id="sslCa" name="ssl[ca]" rows="2">{{item.ssl.ca}}</textarea>
+            </div>
+        </div>
+
+        <p>Custom Headers cannot yet be edited through the web interface. Please use the config file to manage custom headers.</p>
+
+        <div class="mb-3">
+            <label for="customHeaders" class="form-label">Custom Headers ("Key"="Value", one per line)</label>
+            <textarea class="form-control" id="customHeaders" name="customHeaders" rows="3" placeholder="&quot;X-Custom-Header&quot;=&quot;customValue&quot;" disabled>{{item.customHeaders}}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Proxy Configuration</button>
+    </form>
+    </div>
+</div>
+<script>
+// JavaScript for form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// Show/hide SSL config based on secure checkbox
+document.getElementById('secure').addEventListener('change', function() {
+    const sslConfig = document.querySelector('.ssl-config');
+    sslConfig.style.display = this.checked ? 'block' : 'none';
+});
+
+// Hide SSL config initially if secure is unchecked
+window.addEventListener('load', function() {
+    const sslConfig = document.querySelector('.ssl-config');
+    const secureCheckbox = document.getElementById('secure');
+    sslConfig.style.display = secureCheckbox.checked ? 'block' : 'none';
+});
+</script>

@@ -13,7 +13,7 @@ export default async (page, { req, res, next }, config) => {
         res.end();
         return { done: true };
     } else {
-        console.log(urlParts);
+        // console.debug(urlParts);
         return {};
     }
 }

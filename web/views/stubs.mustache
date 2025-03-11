@@ -4,22 +4,6 @@
     <div class="col">
     <a href="/stub/new" class="btn btn-primary">New Stub</a>
     <a href="#" onclick="applyConfig(event)" class="btn btn-info">Apply Config</a>
-    <script>
-        function applyConfig(e) {
-            e.preventDefault();
-            fetch('/config/apply', {
-                method: 'POST'
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                alert('Configuration applied successfully');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error applying configuration');
-            });
-        }
-    </script>
     <p class="spacer"></p>
     {{#stubs}}
         <div class="card">
@@ -35,8 +19,16 @@
                 <p class="card-text">Description: {{description}}</p>
                 <a href="/stub/{{id}}/edit" class="btn btn-primary">Edit</a>
                 {{^special}}{{^write_protected}}<a href="/stub/{{id}}/toggle" class="btn btn-warning">Toggle</a>{{/write_protected}}{{/special}}
-                {{^special}}{{^write_protected}}{{^protected}}<a href="/stub/{{id}}/delete" class="btn btn-danger">Delete</a>{{/protected}}{{/write_protected}}{{/special}}
-            </div>
+                {{^special}}{{^write_protected}}{{^protected}}<a href="#" onclick="deleteItem('{{id}}', event)" class="btn btn-danger">Delete</a>{{/protected}}{{/write_protected}}{{/special}}
+                <script>
+                function deleteItem(id, event) {
+                    event.preventDefault();
+                    if (confirm('Are you sure you want to delete this stub?')) {
+                        fetch('/stub/' + id + '/delete', { method: 'POST' })
+                            .then(() => window.location.reload());
+                    }
+                }
+                </script>            </div>
         </div>
     {{/stubs}}
     </div>

@@ -1,0 +1,89 @@
+<h1 class="text-center">Edit: Stub {{id}}</h1>
+{{! <p>Edit 'em all!</p> }}
+<div class="row">
+    <div class="col">
+    <form id="stubForm" class="needs-validation" method="POST" action="/{{prefix}}/{{id}}" novalidate>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Description (optional)</label>
+            <textarea class="form-control" id="description" name="description" rows="3">{{item.description}}</textarea>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="hidden" name="enabled" value="off">
+            <input type="checkbox" class="form-check-input" id="enabled" name="enabled" value="on" {{#item.enabled}}checked{{/item.enabled}}>
+            <label class="form-check-label" for="enabled">Enabled</label>
+        </div>
+
+        <div class="mb-3">
+            <label for="host" class="form-label">Hosts (comma separated)</label>
+            <textarea class="form-control" id="host" name="host" rows="2" required>{{item.host}}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="status" class="form-label">Status Code (optional)</label>
+            <input type="number" class="form-control" id="status" name="status" value="{{item.status}}">
+        </div>
+
+        <div class="mb-3">
+            <label for="message" class="form-label">Message (optional)</label>
+            <input type="text" class="form-control" id="message" name="message" value="{{item.message}}">
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="hidden" name="secure" value="off">
+            <input type="checkbox" class="form-check-input" id="secure" name="secure" {{#item.secure}}checked{{/item.secure}}>
+            <label class="form-check-label" for="secure">Force TLS/SSL (HTTPS)</label>
+        </div>
+
+        <div class="ssl-config">
+            <h4>SSL Configuration</h4>
+            <div class="mb-3">
+                <label for="sslKey" class="form-label">SSL Key Path</label>
+                <input type="text" class="form-control" id="sslKey" name="ssl[key]" value="{{item.ssl.key}}">
+            </div>
+
+            <div class="mb-3">
+                <label for="sslCert" class="form-label">SSL Certificate Path</label>
+                <input type="text" class="form-control" id="sslCert" name="ssl[cert]" value="{{item.ssl.cert}}">
+            </div>
+
+            <div class="mb-3">
+                <label for="sslCa" class="form-label">SSL CA Path (comma separated)</label>
+                <textarea class="form-control" id="sslCa" name="ssl[ca]" rows="2">{{item.ssl.ca}}</textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Stub Configuration</button>
+    </form>
+    </div>
+</div>
+<script>
+// JavaScript for form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// Show/hide SSL config based on secure checkbox
+document.getElementById('secure').addEventListener('change', function() {
+    const sslConfig = document.querySelector('.ssl-config');
+    sslConfig.style.display = this.checked ? 'block' : 'none';
+});
+
+// Hide SSL config initially if secure is unchecked
+window.addEventListener('load', function() {
+    const sslConfig = document.querySelector('.ssl-config');
+    const secureCheckbox = document.getElementById('secure');
+    sslConfig.style.display = secureCheckbox.checked ? 'block' : 'none';
+});
+</script>

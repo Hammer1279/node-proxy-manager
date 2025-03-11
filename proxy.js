@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync } from 'fs';
 import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import pkg from 'http-proxy';
@@ -7,12 +7,26 @@ import { createServer as createServerHttp, IncomingMessage, ServerResponse } fro
 import { createServer as createServerHttps } from 'https';
 import tls from 'tls';
 
-import config from './config.json' with {
+import initialConfig from './config.json' with {
     type: "json"
 };
 import { handleChallenge } from './acme.js';
 import forge from 'node-forge';
 import { Socket } from 'net';
+
+// always use in memory config for best performance (no disk IO)
+let config = initialConfig;
+
+async function reloadConfig(reqBody) {
+    try {
+        const newConfig = await readFile(join(process.cwd(), 'config.json'), 'utf-8');
+        config = JSON.parse(newConfig);
+        config.revisionId = reqBody;
+        console.debug('Configuration reloaded successfully.');
+    } catch (error) {
+        console.error('Error reloading config:', error);
+    }
+}
 
 const [httpPort, httpsPort] = config.ports;
 
@@ -90,20 +104,100 @@ proxy.on('error', (err, req, res) => {
 const webRequest = (req, res) => {
     // console.debug('HTTP request', req.url);
     if (config.maintenance) {
+        if (req.url.includes('/.well-known/status')) {
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                ok: false,
+                status: 'down',
+                reason: 'maintenance',
+                revisionId: config.revisionId || "initial",
+            }));
+            return;
+        }
         res.writeHead(503, { 'Content-Type': 'text/plain' });
         res.end('Service Unavailable');
         return;
     } else if (config.teapot) {
+        if (req.url.includes('/.well-known/status')) {
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                ok: false,
+                status: 'down',
+                reason: 'tea time',
+                revisionId: config.revisionId || "initial",
+            }));
+            return;
+        }
         res.writeHead(418, { 'Content-Type': 'text/plain' });
-        res.end('It’s not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!');
+        res.end("It's not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!");
         return;
     } else if (req.url.includes('/.well-known/status')) {
         // console.debug(req.headers['user-agent']);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-            ok: true,
-            status: 'up'
-        }));
+        if (req.method == "GET") {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                ok: true,
+                status: 'up',
+                reason: 'none',
+                revisionId: config.revisionId || "initial",
+            }));
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('Method Not Allowed');
+        }
+        return;
+    } else if (req.url.includes('/.well-known/reload')) {
+        if (req.method == "POST") {
+            // console.debug("POST request to /.well-known/reload");
+            // console.debug(req.headers["authorization"]);
+            let success = false;
+            let auth = Buffer.from(req.headers["authorization"]?.split(" ")[1] || "", "base64").toString();
+            if (auth) {
+                const authFile = readFileSync(join(process.cwd(), 'auth.json'), 'utf-8');
+                const validAuths = JSON.parse(authFile);
+                if (validAuths.includes(auth)) {
+
+                    let body = '';
+                    // console.debug('Content-length:', req.headers['content-length']);
+                    req.on('data', chunk => {
+                        // console.debug('Received chunk:', chunk.toString());
+                        // console.debug('Received chunk length:', chunk.length);
+                        body += chunk.toString();
+                    });
+                    req.on('end', async () => {
+                        // console.debug('POST body:', body);
+                        if (body) {
+                            try {
+                                await reloadConfig(body);
+                                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                                res.end('OK');
+                            } catch (error) {
+                                console.error('Error reloading config:', error);
+                                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                                res.end('Internal Server Error');
+                            }
+                        } else {
+                            res.writeHead(400, { 'Content-Type': 'text/plain' });
+                            res.end('Bad Request');
+                        }
+                    });
+
+                    // delete the single use auth key
+                    const index = validAuths.indexOf(auth);
+                    if (index > -1) {
+                        validAuths.splice(index, 1);
+                        writeFileSync(join(process.cwd(), 'auth.json'), JSON.stringify(validAuths));
+                        return;
+                    }
+                }
+            }
+            res.writeHead(401, { 'Content-Type': 'text/plain' });
+            res.end('Unauthorized');
+            return;
+        } else {
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('Method Not Allowed');
+        }
         return;
     } else if (req.url.includes('/.well-known/acme-challenge')) {
         if (config.acme.enabled) {

@@ -12,6 +12,18 @@
                 },
                 "restriction": false
             },
+            "/ejs-test": {
+                "file": "test",
+                "scripts": ["variables"],
+                "settings": {
+                    "type": "ejs",
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
             "/about": {
                 "file": "about",
                 "scripts": ["variables"],
@@ -23,24 +35,33 @@
                 },
                 "restriction": false
             },
+            "/:type(*)/:id(\\d+)/toggle": {
+                "file": null,
+                "scripts": ["toggle"],
+                "restriction": false
+            },
             "/proxy": {
                 "file": "proxy",
                 "scripts": ["variables", "confContext"],
                 "settings": {
                     "stylesheets": [],
-                    "scripts": [],
+                    "scripts": ["reloadUtil.js"],
                     "widgets": [],
                     "loadbootstrap": true
                 },
                 "restriction": false
             },
-            "/proxy/*/toggle": {
-                "file": null,
-                "scripts": ["toggle"],
-                "restriction": false
-            },
+            // "/proxy/*/toggle": {
+            //     "file": null,
+            //     "scripts": ["toggle"],
+            //     "restriction": false
+            // },
             "/proxy/*": {
-                "file": "empty",
+                "file": "proxyEdit",
+                // variables: add package values
+                // confContext: add config values
+                // urlContext: add url parsed params
+                // noDetails: redirect from any/<int> back to the overview
                 "scripts": ["variables", "confContext", "urlContext", "noDetails"],
                 "settings": {
                     "stylesheets": [],
@@ -55,19 +76,19 @@
                 "scripts": ["variables", "confContext"],
                 "settings": {
                     "stylesheets": [],
-                    "scripts": [],
+                    "scripts": ["reloadUtil.js"],
                     "widgets": [],
                     "loadbootstrap": true
                 },
                 "restriction": false
             },
-            "/stub/*/toggle": {
-                "file": null,
-                "scripts": ["toggle"],
-                "restriction": false
-            },
+            // "/stub/*/toggle": {
+            //     "file": null,
+            //     "scripts": ["toggle"],
+            //     "restriction": false
+            // },
             "/stub/*": {
-                "file": "empty",
+                "file": "stubEdit",
                 "scripts": ["variables", "confContext", "urlContext", "noDetails"],
                 "settings": {
                     "stylesheets": [],
@@ -112,7 +133,12 @@
             // },
         },
         "post": {
-            "/proxy/*": {
+            "/:type(*)/:id(\\d+)/delete": {
+                "file": null,
+                "scripts": ["delete"],
+                "restriction": false
+            },
+            "/:type(*)/:id(\\d+|new)": {
                 "file": null,
                 "scripts": ["update"],
                 "restriction": false
@@ -144,12 +170,12 @@
             "url": "/proxy"
         },
         {
-            "name": "Redirect Domains",
+            "name": "Redirect-Hosts",
             "url": "/redirects",
             "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         {
-            "name": "Port Forwards",
+            "name": "Port-Forwards",
             "url": "/port-forwards",
             "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },

@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync } from 'fs';
-import { readdir, readFile } from 'fs/promises';
+import { readdirSync, readFileSync, existsSync } from 'fs';
+import { readdir, readFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import pkg from 'http-proxy';
 const { createProxyServer } = pkg;
@@ -21,6 +21,10 @@ import config from './config.json' with {
     type: "json"
 };
 import { fork } from 'child_process';
+
+if (existsSync(join(process.cwd(), 'auth.json')) && config.cleanAuthFile) {
+    unlink(join(process.cwd(), 'auth.json')); // Remove old auth file
+}
 
 if (config.acme.enabled) {
     let acmeFork = fork('./acme.js');

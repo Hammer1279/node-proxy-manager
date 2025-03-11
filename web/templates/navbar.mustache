@@ -63,6 +63,7 @@
                     </div>
                 </li> }}
 
+
             </ul>
 
             {{! <form class="d-flex">
@@ -76,11 +77,18 @@
             <a class="btn btn-secondary" href="javascript:logout()" id="log-btn">Logout</a>
             </div>
         </div>
+    
+        {{! <div class="collapse navbar-collapse" id="navbarColor02"> }}
         <div class="collapse navbar-collapse" id="navbarColor02" style="visibility: hidden; display: none;">
             <span class="navbar-text me-2" id="nav-log">
                 Unapplied Changes
                 <a class="btn btn-success" href="#" id="apply-btn">Apply</a>
             </span>
+        </div>
+        <div class="log-sect">
+                <span class="navbar-text me-2" id="nav-log">
+                    Logged in as: <span id="nav-usr" style="color: white; {{! text-decoration: underline; }}">{{username}}</span>
+                </span>
         </div>
     </div>
 </nav>
