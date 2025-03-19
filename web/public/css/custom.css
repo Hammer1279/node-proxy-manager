@@ -6,11 +6,12 @@ body {
     min-height: 400px;
     margin-bottom: 100px;
     clear: both;
-    font-family: 'Consolas', 'Arial', sans-serif;
+    /* font-family: 'Consolas', 'Lato', 'Arial', sans-serif; */
     /* font-family: 'Orbitron', sans-serif; */
     font-weight: 300;
     /* font-family: "Space Grotesk", sans-serif; */
     /* font-family: 'Unispace', sans-serif; */
+    /* text-shadow: 1px 1px black; */
     /* text-shadow: 2px 2px black; */
     /* text-shadow: 2px 2px 2px black; */
     text-shadow: 1px 1px 3px black;

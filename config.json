@@ -29,7 +29,14 @@
         "username": "admin",
         "password": "admin",
         "logging": false,
-        "logFile": "logs/server.log"
+        "logFile": "logs/server.log",
+        "trustedProxies": [],
+        "ratelimit": {
+            "enabled": true,
+            "maxAuthRequests": 3,
+            "timeWindow": 300,
+            "whitelist": []
+        }
     },
     "testserver": {
         "_note": "This is a test server, it will respond with a 200 OK, if enabled",

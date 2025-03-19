@@ -1,5 +1,7 @@
 import fs from 'fs';
 import express from 'express';
+import superagent from 'superagent';
+import { containsCidr } from 'cidr-tools';
 import basicAuth from 'express-basic-auth';
 import { join, resolve, dirname } from 'path';
 import { parse } from "jsonc-parser";
@@ -8,6 +10,8 @@ import { fileURLToPath } from 'url';
 import { readFile } from 'fs/promises';
 import { mustache } from "consolidate";
 import { renderFile, render as ejsRender } from 'ejs';
+import NodeCache from 'node-cache';
+import { rateLimit } from 'express-rate-limit';
 
 import config from '../config.json' with {
     type: "json"
@@ -19,7 +23,10 @@ const __dirname = dirname(__filename);
 // allow comments in pages file
 const pages = parse(fs.readFileSync("./web/pages.jsonc").toString());
 
-
+const cache = new NodeCache({
+    stdTTL: 3600,
+    useClones: false
+});
 
 const app = express();
 
@@ -46,11 +53,79 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use((req, res, next) => {
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // res.setHeader('Content-Security-Policy', 'default-src \'self\'');
+    res.setHeader('Referrer-Policy', 'same-origin');
+    res.setHeader('Feature-Policy', 'geolocation \'none\'; microphone \'none\'; camera \'none\'; speaker \'none\'; vibrate \'none\'; payment \'none\'; usb \'none\';');
+    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+    next();
+});
+
+// real IP assignment
+app.use(async (req, res, next) => {
+    let ip = "0.0.0.0/0";
+    if ("x-forwarded-for" in req.headers) {
+        if (containsCidr(config.management.trustedProxies, req.ip)) {
+            ip = req.headers['x-forwarded-for'] || req.ip; 
+        } else {
+            return res.sendStatus(403);
+        }
+    } else if ("cf-connecting-ip" in req.headers){
+        if (!cache.has("cfcidrList")) {
+            cache.set("cfcidrList", (await superagent.get("https://api.cloudflare.com/client/v4/ips")).body);
+        }
+        const cfcidrList = cache.get("cfcidrList");
+        if (!cfcidrList.success) {
+            return next(cfcidrList.errors.join(", "));
+        }
+        if (containsCidr([...cfcidrList.result.ipv4_cidrs, ...cfcidrList.result.ipv6_cidrs], req.ip)) {
+            ip = req.headers['cf-connecting-ip'] || req.ip;
+        } else {
+            return res.sendStatus(403);
+        }
+    } else {
+        ip = req.ip; // Do nothing
+    }
+    req.realIp = ip;
+    next();
+});
+
+// Rate limiter
+app.use(async (req, res, next) => {
+    const rateSettings = config.management.ratelimit;
+    if (rateSettings.enabled) {
+        if (rateSettings.whitelist.includes(req.realIp)) {
+            return next();
+        }
+        if (cache.has("ratelimit-" + req.realIp)) {
+            const entry = cache.get("ratelimit-" + req.realIp);
+            if (entry.count >= rateSettings.maxAuthRequests) {
+                return res.setHeader("Retry-After", Math.floor((cache.getTtl("ratelimit-" + req.realIp) - Date.now()) / 1000)).sendStatus(429);
+            }
+        }
+    }
+    next();
+});
+
 app.use(basicAuth({
     users: { [config.management.username]: config.management.password },
     challenge: true,
     unauthorizedResponse: '401 Unauthorized',
     realm: 'Management Interface',
+    unauthorizedResponse: (req) => {
+        if (cache.has("ratelimit-" + req.realIp)) {
+            const entry = cache.get("ratelimit-" + req.realIp);
+            entry.count++;
+            if (entry.count >= config.management.ratelimit.maxAuthRequests) {
+                return 'Too Many Requests';
+            }
+        } else {
+            cache.set("ratelimit-" + req.realIp, { count: 1 }, config.management.ratelimit.timeWindow);
+        }
+        return '401 Unauthorized';
+    }
 }));
 
 app.set('views', join(__dirname, 'views'));
