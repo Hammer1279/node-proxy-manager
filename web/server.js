@@ -69,7 +69,7 @@ app.use(async (req, res, next) => {
         if (containsCidr(config.management.trustedProxies, req.ip)) {
             ip = req.headers['x-forwarded-for'] || req.ip; 
         } else {
-            console.warn("Proxy IP not in list");
+            console.warn("Proxy IP not in list:", req.ip);
             return res.sendStatus(403);
         }
     } else if ("cf-connecting-ip" in req.headers){
@@ -83,7 +83,7 @@ app.use(async (req, res, next) => {
         if (containsCidr([...cfcidrList.result.ipv4_cidrs, ...cfcidrList.result.ipv6_cidrs], req.ip)) {
             ip = req.headers['cf-connecting-ip'] || req.ip;
         } else {
-            console.warn("CF IP not in list");
+            console.warn("CF IP not in list:", req.ip);
             return res.sendStatus(403);
         }
     } else {
