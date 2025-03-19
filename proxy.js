@@ -237,11 +237,11 @@ const webRequest = (req, res) => {
         res.writeHead(503, { 'Content-Type': 'text/plain' });
         res.end('Service Unavailable');
         return;
-    } else if ((domConfProxy?.secure || domConfStub.secure) && req.socket.localPort === 80) {
+    } else if ((domConfProxy?.secure || domConfStub?.secure) && req.socket.localPort === 80) {
         res.writeHead(301, { 'Location': `https://${domain}${req.url}` });
         res.end();
         return;
-    } else if ((!(domConfProxy?.secure || domConfStub.secure)) && req.socket.localPort === 443) {
+    } else if ((!(domConfProxy?.secure || domConfStub?.secure)) && req.socket.localPort === 443) {
         res.writeHead(301, { 'Location': `http://${domain}${req.url}` });
         res.end();
         return
