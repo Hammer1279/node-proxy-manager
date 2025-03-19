@@ -66,7 +66,7 @@ app.use((req, res, next) => {
 app.use(async (req, res, next) => {
     let ip = "0.0.0.0/0";
     if ("x-forwarded-for" in req.headers) {
-        if (containsCidr(config.management.trustedProxies, req.ip)) {
+        if (containsCidr(["localhost", "127.0.0.1", "::1", ...config.management.trustedProxies], req.ip)) {
             ip = req.headers['x-forwarded-for'] || req.ip; 
         } else {
             console.warn("Proxy IP not in list:", req.ip);
