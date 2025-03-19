@@ -11,7 +11,6 @@ import { readFile } from 'fs/promises';
 import { mustache } from "consolidate";
 import { renderFile, render as ejsRender } from 'ejs';
 import NodeCache from 'node-cache';
-import { rateLimit } from 'express-rate-limit';
 
 import config from '../config.json' with {
     type: "json"
