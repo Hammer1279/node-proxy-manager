@@ -8,7 +8,7 @@
     {{#proxies}}
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">{{host}}</h5>
+                <h5 class="card-title"><a href="{{#secure}}https://{{/secure}}{{^secure}}http://{{/secure}}{{host}}" target="_blank">{{host}}</a></h5>
                 <p class="card-text">
                 Enabled: {{enabled}}<br>
                 System Rule: {{special}}<br>

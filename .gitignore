@@ -137,3 +137,6 @@ certs/**/*
 
 # authentication tokens
 auth.json
+
+# script to modify the configuration on development machines
+devconf.js

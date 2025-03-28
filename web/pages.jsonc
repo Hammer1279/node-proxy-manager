@@ -1,3 +1,4 @@
+// Defines the routes used by the Webserver
 {
     "paths": {
         "get": {
@@ -99,9 +100,10 @@
                 "restriction": false
             },
             "/acme": {
-                "file": "empty",
-                "scripts": ["variables"],
+                "file": "acme",
+                "scripts": ["variables", "confContext"],
                 "settings": {
+                    "type": "handlebars",
                     "stylesheets": [],
                     "scripts": [],
                     "widgets": [],
@@ -146,6 +148,11 @@
             "/config/apply": {
                 "file": null,
                 "scripts": ["restartProxy"],
+                "restriction": false
+            },
+            "/acme": {
+                "file": null,
+                "scripts": ["acme"],
                 "restriction": false
             },
             // "/register": {

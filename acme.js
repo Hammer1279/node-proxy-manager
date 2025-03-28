@@ -3,6 +3,7 @@ import { readdir, readFile } from 'fs/promises';
 import { createServer as createServerHttp, IncomingMessage, ServerResponse } from 'http';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { hostname } from 'os';
 
 import config from './config.json' with {
     type: "json"
@@ -18,6 +19,16 @@ const http01 = http01Lib.create({});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+if (hostname() == "devserv.ht-dev.de") {
+    config.acme.staging = true;
+    config.acme.email = "noreply@ht-dev.de";
+    config.acme.domains = config.acme.domains.filter(domains => domains[0] !== "example.com");
+    if (config.acme.domains.length == 0) {
+        config.acme.domains = [["devserv.ht-dev.de"]];
+    }
+    config.acme.agreeToTerms = true;
+}
 
 export function runCertbot() {
     const greenlock = Greenlock.create({
@@ -49,6 +60,16 @@ export function runCertbot() {
 
     config.acme.domains.forEach(domains => {
         console.log(`Processing domain: ${domains[0]}`);
+        if (domains[0] == "example.com") {
+            console.warn("Skipping example.com domain");
+            return;
+        } else if(domains[0] == "devserv.ht-dev.de" && hostname() != "devserv.ht-dev.de") {
+            // this is the development server and should never appear on anyones configuration
+            throw new Error("Invalid Configuration!");
+        } else if(domains[0] == "localhost") {
+            console.warn("Skipping localhost domain");
+            return;
+        }
         greenlock.add({
             subject: domains[0],
             altnames: domains,

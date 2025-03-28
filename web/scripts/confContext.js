@@ -29,5 +29,14 @@ export default async (page, { req, res, next }, config) => {
                 description: values.description ?? "No description available"
             }
         }),
+        acme: {
+            ...runtimeConfig.acme,
+            domains: runtimeConfig.acme.domains.map((value, index) => (
+                {
+                    certificate: value[0],
+                    entries: value,
+                }
+            ))
+        },
     }
 }

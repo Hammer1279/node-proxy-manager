@@ -18,6 +18,16 @@ An NodeJS version of Nginx Proxy Manager that is hopefully more reliable.
 4. Edit the `config.json` with the editor of your choice
 5. Run the application: `node index.js`
 
+### Updating from Git
+
+During updates, often config changes are shipped to keep your config compatible, most features are non breaking.
+
+To update it without many issues:
+1. stash local changes: `git add * && git stash`
+2. update local clone: `git pull`
+3. pop stash: `git stash pop`
+4. check the config with a editor of your choice for any merge conflicts and resolve them
+
 ### Autostart using PM2 (Linux/MacOS only I believe)
 
 > This short guide assumes you have fully followed through the Installation steps.

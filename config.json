@@ -48,10 +48,11 @@
     },
     "acme": {
         "_note": "this client does not seem too reliable, use certbot or acme.sh instead if possible",
-        "enabled": false,
+        "enabled": true,
         "_terms": "From the directory link, you will find the terms of service, you need to agree to them before using the acme client",
         "agreeToTerms": false,
         "directoryUrl": "https://acme-v02.api.letsencrypt.org/directory",
+        "_configDir": "do not change this unless you know what you are doing",
         "configDir": "certs/acme",
         "_email": "change this to your email address",
         "email": "changme@example.com",

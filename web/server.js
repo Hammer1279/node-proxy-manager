@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { readFile } from 'fs/promises';
 import { mustache } from "consolidate";
 import { renderFile, render as ejsRender } from 'ejs';
+import { engine as handlebars, create } from 'express-handlebars';
 import NodeCache from 'node-cache';
 
 import config from '../config.json' with {
@@ -133,6 +134,14 @@ app.set('views', join(__dirname, 'views'));
 app.engine('mustache', mustache);
 app.set('view engine', 'mustache');
 app.engine('ejs', renderFile);
+app.engine('handlebars', handlebars());
+const hbs = create({
+    extname: '.handlebars',
+    // defaultLayout: 'base.mustache',
+    defaultLayout: false,
+    layoutsDir: join(__dirname, 'templates'),
+    partialsDir: join(__dirname, 'templates'),
+});
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
@@ -153,6 +162,12 @@ async function render(req, res, view, context, cb) {
         const ejsResult = await renderFile(join(viewsDir, view + ".ejs"), context);
         partials['view'] = join(partialsDir, 'ejs.mustache');
         res.render(partials['base'], { ...context, partials: partials, ejs: ejsResult }, cb);
+        return;
+    } else if (context.type == "handlebars") {
+        console.debug("Rendering Handlebars");
+        const handlebarsResult = await hbs.renderView(join(viewsDir, view + ".handlebars"), context);
+        partials['view'] = join(partialsDir, 'handlebars.mustache');
+        res.render(partials['base'], { ...context, partials: partials, handlebars: handlebarsResult }, cb);
         return;
     } else {
         if (context.type && context.type != "mustache") {
