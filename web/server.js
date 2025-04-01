@@ -54,7 +54,13 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
-    res.setHeader('X-Frame-Options', 'DENY');
+    if (config.management.embedSite) {
+        res.setHeader('X-Frame-Options', 'ALLOW-FROM ' + config.management.embedSite);
+        res.setHeader('Content-Security-Policy', 'frame-ancestors ' + config.management.embedSite);
+    } else {
+        res.setHeader('X-Frame-Options', 'DENY');
+        res.setHeader('Content-Security-Policy', 'frame-ancestors \'none\'');
+    }
     res.setHeader('X-Content-Type-Options', 'nosniff');
     // res.setHeader('Content-Security-Policy', 'default-src \'self\'');
     res.setHeader('Referrer-Policy', 'same-origin');

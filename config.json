@@ -36,7 +36,9 @@
             "maxAuthRequests": 3,
             "timeWindow": 300,
             "whitelist": []
-        }
+        },
+        "_embedSite": "https://example.com",
+        "embedSite": false
     },
     "testserver": {
         "_note": "This is a test server, it will respond with a 200 OK, if enabled",
@@ -110,7 +112,7 @@
             "host": [
                 "devserv.ht-dev.de"
             ],
-            "enabled": true,
+            "enabled": false,
             "target": "http://localhost:81",
             "ssl": {
                 "key": "certs/acme/live/devserv.ht-dev.de/privkey.pem",
@@ -155,7 +157,7 @@
             "host": [
                 "devserv.ht-dev.de"
             ],
-            "enabled": true,
+            "enabled": false,
             "status": 200,
             "message": "Success",
             "secure": true,
