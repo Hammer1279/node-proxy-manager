@@ -66,13 +66,21 @@ const proxy = createProxyServer({
 });
 
 proxy.on('error', (err, req, res) => {
-    console.error(err);
-    if (['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET'].includes(err.code)) {
-        res.writeHead(502, { 'Content-Type': 'text/plain' });
-        res.end('Bad Gateway');
+    // Check if `res` is an HTTP response object
+    if (res && typeof res.writeHead === 'function') {
+        console.error(err);
+        if (['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET'].includes(err.code)) {
+            res.writeHead(502, { 'Content-Type': 'text/plain' });
+            res.end('Bad Gateway');
+        } else {
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('Internal Server Error');
+        }
     } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Internal Server Error');
+        // Handle WebSocket or other non-HTTP errors
+        if (req && req.url) {
+            console.error(`Error during request to ${req.url}:`, err.message);
+        }
     }
 });
 
@@ -80,7 +88,7 @@ proxy.on('error', (err, req, res) => {
  * Handle HTTP/S requests
  * @param {IncomingMessage} req 
  * @param {ServerResponse} res 
- * @returns 
+ * @returns {void}
  */
 const webRequest = (req, res) => {
     // console.debug('HTTP request', req.url);

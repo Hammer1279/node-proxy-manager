@@ -1,5 +1,5 @@
 import tls from 'tls';
-import http from 'http';
+import http, { IncomingMessage, ServerResponse } from 'http';
 import https from 'https';
 
 import config from './config.json' with { type: 'json' };
@@ -9,11 +9,11 @@ import { reloadProxy, reloadWebServer } from './index.js';
 
 /**
  * Performs basic authentication
- * @param {*} req 
- * @param {*} res 
- * @param {*} user
- * @param {*} pass
- * @returns boolean successful authentication
+ * @param {IncomingMessage} req 
+ * @param {ServerResponse} res 
+ * @param {string} user
+ * @param {string} pass
+ * @returns {boolean} successful authentication
  */
 function basicAuth(req, res, user, pass, realm="Debug Access") {
     // Check for basic auth header
