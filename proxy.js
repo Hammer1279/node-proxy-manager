@@ -295,6 +295,7 @@ const wsRequest = (req, socket, head) => {
         proxy.ws(req, socket, head, {
             target: domConfProxy.target,
             xfwd: true,
+            secure: false, // Allow self-signed certificates
             proxyTimeout: domConfProxy.timeout || config.timeout,
             headers: domConfProxy.headers || {}
         });
