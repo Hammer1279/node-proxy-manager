@@ -1,6 +1,7 @@
 <h1 class="text-center">Certificate Manager (Greenlock)</h1>
 <div class="row">
     <div class="col">
+        <a href="/acme/new" class="btn btn-primary">New Certificate</a>
         {{#acme}}
         <form action="/acme" method="POST">
             <div class="card">
@@ -12,6 +13,13 @@
                             id="enabledCheck">
                         <label class="form-check-label" for="enabledCheck">
                             Enabled
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="autodetect" {{#if autodetect}}checked{{/if}}
+                            id="autodetectCheck" disabled>
+                        <label class="form-check-label" for="autodetectCheck">
+                            Automatically manage certificates for all configured domains. (coming soon)
                         </label>
                     </div>
                     Using ACME Service: <a href="#" id="serviceName" target="_blank"></a>
@@ -37,11 +45,6 @@
                         <label for="checkInterval" class="form-label">Renew Check Interval (Days)</label>
                         <input type="number" class="form-control" id="checkInterval" name="checkInterval"
                             value="{{checkInterval}}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="renewWithin" class="form-label">Renew Within (Days) (cannot be changed yet)</label>
-                        <input type="number" class="form-control" id="renewWithin" name="renewWithin"
-                            value="45" disabled readonly>
                     </div>
                     </p>
                     <button type="submit" class="btn btn-success" disabled>Save</button>
@@ -82,8 +85,8 @@
                     <button class="btn btn-sm btn-info copy-btn"
                         data-copy="certs/acme/live/{{certificate}}/chain.pem">Copy</button>
                 </p>
-                <a href="/acme/{{@index}}/edit" class="btn btn-primary disabled" aria-disabled="true">Edit</a>
-                <a href="#" onclick="deleteItem('{{@index}}', event)" class="btn btn-danger disabled" aria-disabled="true">Delete</a>
+                <a href="/acme/{{@index}}/edit" class="btn btn-primary">Edit</a>
+                <a href="#" onclick="deleteItem('{{@index}}', event)" class="btn btn-danger">Delete</a>
             </div>
         </div>
         {{/each}}
@@ -98,7 +101,7 @@
     // Function to delete an item
     function deleteItem(id, event) {
         event.preventDefault();
-        if (confirm('Are you sure you want to delete this proxy?')) {
+        if (confirm('Are you sure you want to delete this certificate?')) {
             fetch('/acme/' + id + '/delete', { method: 'POST' })
                 .then(() => window.location.reload());
         }
@@ -111,7 +114,7 @@
                 const textToCopy = button.getAttribute('data-copy');
                 navigator.clipboard.writeText(textToCopy)
                     .then(() => {
-                        { { !--alert(`Copied to clipboard: ${textToCopy}`); --} }
+                        // alert(`Copied to clipboard: ${textToCopy}`);
                     })
                     .catch(err => {
                         console.error('Failed to copy text: ', err);

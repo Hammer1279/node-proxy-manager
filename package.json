@@ -1,7 +1,7 @@
 {
   "name": "node-proxy-manager",
   "fullname": "Node Proxy Manager",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "An NodeJS alternative to Nginx Proxy Manager that is hopefully more reliable.",
   "main": "index.js",
   "scripts": {
@@ -32,6 +32,7 @@
     "ws": "^8.18.1"
   },
   "devDependencies": {
+    "mocha": "^11.1.0",
     "nodemon": "^3.1.9"
   },
   "type": "module"

@@ -118,9 +118,8 @@ app.use(async (req, res, next) => {
 });
 
 app.use(basicAuth({
-    users: { [config.management.username]: config.management.password },
+    users: config.management.accounts,
     challenge: true,
-    unauthorizedResponse: '401 Unauthorized',
     realm: 'Management Interface',
     unauthorizedResponse: (req) => {
         if (cache.has("ratelimit-" + req.realIp)) {

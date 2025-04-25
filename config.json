@@ -17,17 +17,23 @@
     "_unconfiguredCloseNoResponse": "If enabled, the server will instantly close the connection instead of responding with 421 Misdirected Request",
     "unconfiguredCloseNoResponse": true,
     "_cleanAuthFile": "If enabled, the auth file is purged, this file is to store auth tokens for the management interface",
-    "cleanAuthFile": false,
+    "cleanAuthFile": true,
+    "_initialSync": "refuse all non acme related requests to allow initializing all certificates",
+    "initialSync": false,
     "maintenance": false,
     "_teapot": "if you don't like this server to brew coffee, you can enable the teapot status code, it's the same as maintenance mode, but as a joke",
+    "_teapotter": "notice: this might get be removed in the future (in favor of the HTCPCP/1.0 server)",
     "teapot": false,
     "management": {
         "_note": "Management interface is not yet implemented, it will include a web interface similar to Nginx Proxy Manager (hopefully)",
         "enabled": true,
         "port": 81,
-        "_accounts": "Currently only one account is supported, more will be added in the future",
-        "username": "admin",
-        "password": "admin",
+        "_accounts": "username and password is deprecated and will be removed in the future, use accounts instead",
+        "_username": "admin",
+        "_password": "admin",
+        "accounts": {
+            "admin": "admin"
+        },
         "logging": false,
         "logFile": "logs/server.log",
         "trustedProxies": [],
@@ -39,6 +45,20 @@
         },
         "_embedSite": "https://example.com",
         "embedSite": false
+    },
+    "fallback": {
+        "_note": "emergency fallback server for different services, if disabled, the process will just be killed",
+        "disable": false,
+        "admin_api": {
+            "_note": "not implemented yet",
+            "port": 1337,
+            "auth": [
+                {
+                    "username": "admin",
+                    "password": "admin"
+                }
+            ]
+        }
     },
     "testserver": {
         "_note": "This is a test server, it will respond with a 200 OK, if enabled",
@@ -63,7 +83,8 @@
         "_domains": "each list is a certificate, each certificate can have multiple domains, it is recommended to only have one single certificate for all domains",
         "domains": [
             [
-                "example.com"
+                "example.com",
+                "www.example.com"
             ]
         ]
     },
@@ -106,6 +127,11 @@
             "timeout": 1000,
             "_headers": {
                 "X-Custom-Header": "customValue"
+            },
+            "auth": {
+                "enabled": true,
+                "username": "admin",
+                "password": "admin"
             }
         },
         {

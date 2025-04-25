@@ -1,0 +1,123 @@
+{
+    "_note": "This is a test config, do not use this outside of unit testing",
+    "ports": [
+        7080,
+        7443
+    ],
+    "httpPorts": [
+        7080
+    ],
+    "httpsPorts": [
+        7443
+    ],
+    "timeout": 30000,
+    "unconfiguredCloseNoResponse": true,
+    "cleanAuthFile": false,
+    "maintenance": false,
+    "teapot": false,
+    "management": {
+        "enabled": true,
+        "port": 7081,
+        "username": "admin",
+        "password": "admin",
+        "logging": false,
+        "logFile": "logs/server.log",
+        "trustedProxies": [],
+        "ratelimit": {
+            "enabled": true,
+            "maxAuthRequests": 3,
+            "timeWindow": 300,
+            "whitelist": []
+        },
+        "embedSite": "https://example.com"
+    },
+    "testserver": {
+        "_note": "This is a test server, it will respond with a 200 OK, if enabled",
+        "enabled": false,
+        "websocket": true,
+        "_fail": "if enabled, the test server will not respond causing a timeout",
+        "fail": false,
+        "port": 7088
+    },
+    "acme": {
+        "_note": "this cannot be tested reliably yet, we need to include a own directory to test it",
+        "enabled": false
+    },
+    "ssl": {
+        "key": "test/data/ssl/key.pem",
+        "cert": "test/data/ssl/cert.pem",
+        "ca": []
+    },
+    "proxy": [
+        {
+            "host": [
+                "localhost"
+            ],
+            "enabled": false,
+            "target": "http://localhost:7088",
+            "ssl": {
+                "key": "test/data/ssl/key.pem",
+                "cert": "test/data/ssl/cert.pem",
+                "ca": []
+            },
+            "redirect": false,
+            "redirectTemp": false,
+            "websocket": true,
+            "secure": false,
+            "maintenance": false,
+            "timeout": 1000,
+            "headers": {
+                "X-Custom-Header": "customValue"
+            }
+        },
+        {
+            "host": [
+                "example.com"
+            ],
+            "enabled": false,
+            "target": "http://localhost:7081",
+            "ssl": {
+                "key": "test/data/ssl/key.pem",
+                "cert": "test/data/ssl/cert.pem",
+                "ca": []
+            },
+            "redirect": false,
+            "redirectTemp": false,
+            "websocket": false,
+            "secure": true,
+            "maintenance": true,
+            "timeout": 1000,
+            "headers": {
+                "X-Custom-Header": "customValue"
+            }
+        }
+    ],
+    "stub": [
+        {
+            "_note": "This is the response config for any errors, do not remove this",
+            "host": [
+                "invalid.host",
+                "external-direct-ip"
+            ],
+            "enabled": false,
+            "special": true,
+            "status": 404,
+            "message": "Not Found",
+            "secure": false,
+            "ssl": {},
+            "write_protected": true
+        },
+        {
+            "host": [
+                "localhost"
+            ],
+            "enabled": false,
+            "special": true,
+            "status": 200,
+            "message": "OK",
+            "secure": false,
+            "ssl": {},
+            "write_protected": true
+        }
+    ]
+}

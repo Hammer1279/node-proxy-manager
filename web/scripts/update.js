@@ -79,6 +79,9 @@ export default async (page, { req, res, next }, config) => {
                 "host": item.host.split(','),
                 "enabled": item.enabled[item.enabled.length - 1] === "true" || item.enabled[item.enabled.length - 1] == "on",
                 "maintenance": item.maintenance[item.maintenance.length - 1] === "true" || item.maintenance[item.maintenance.length - 1] == "on",
+                "websocket": item.websocket[item.websocket.length - 1] === "true" || item.websocket[item.websocket.length - 1] == "on",
+                "redirect": item.redirect[item.redirect.length - 1] === "true" || item.redirect[item.redirect.length - 1] == "on",
+                "redirectTemp": item.redirectTemp[item.redirectTemp.length - 1] === "true" || item.redirectTemp[item.redirectTemp.length - 1] == "on",
                 "target": item.target,
                 "timeout": parseInt(item.timeout),
                 "secure": item.secure[item.secure.length - 1] === "true" || item.secure[item.secure.length - 1] == "on",
@@ -86,6 +89,12 @@ export default async (page, { req, res, next }, config) => {
                     "key": item.ssl.key || "",
                     "cert": item.ssl.cert || "",
                     "ca": item.ssl.ca ? item.ssl.ca.split(',') : []
+                },
+                "headers": {},
+                "auth": {
+                    "enabled": item.auth.enabled[item.auth.enabled.length - 1] === "true" || item.auth.enabled[item.auth.enabled.length - 1] == "on",
+                    "username": item.auth.username || "",
+                    "password": item.auth.password || "",
                 }
             });
             await writeFile(join(".", 'config.json'), JSON.stringify(runtimeConfig, null, 4), 'utf-8');

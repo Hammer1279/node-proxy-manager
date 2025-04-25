@@ -11,19 +11,29 @@ import { join } from "path";
  */
 export default async (page, { req, res, next }, config) => {
     const urlParts = req.url.split('/');
-    const id = req.params.id;
+    const index = req.params.id;
     const type = req.params.type;
 
     const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
 
-    if (runtimeConfig[type] === undefined || runtimeConfig[type][id] === undefined || runtimeConfig[type][id].special || runtimeConfig[type][id].write_protected) {
+    if (type != "acme" && (runtimeConfig[type] === undefined || runtimeConfig[type][index] === undefined || runtimeConfig[type][index].special || runtimeConfig[type][index].write_protected)) {
         res.sendStatus(400);
         return { done: true };
     }
 
-    console.log("Deleting", type, id);
-    // delete runtimeConfig[type][id];
-    runtimeConfig[type].splice(id, 1);
+    if (type == "acme") {
+        if (index >= 0 && index < runtimeConfig.acme.domains.length) {
+            console.log(`Deleting domain configuration at index ${index}`);
+            runtimeConfig.acme.domains.splice(index, 1); // Remove the domain at the specified index
+        } else {
+            res.sendStatus(400); // Invalid id
+            return { done: true };
+        }
+    } else {
+        console.log("Deleting", type, index);
+        // delete runtimeConfig[type][index];
+        runtimeConfig[type].splice(index, 1);
+    }
 
     await writeFile(join(".", 'config.json'), JSON.stringify(runtimeConfig, null, 4));
     

@@ -13,6 +13,7 @@ import initialConfig from './config.json' with {
 import { handleChallenge } from './acme.js';
 import forge from 'node-forge';
 import { Socket } from 'net';
+import { getCertificate } from './CertManager.js';
 
 // always use in memory config for best performance (no disk IO)
 let config = initialConfig;
@@ -55,27 +56,7 @@ function getSecureContext(domain) {
         }).context;
     } catch (error) {
         console.error(`Error loading certificates for ${domain}:`, error);
-        // Generate a self-signed certificate
-        const pki = forge.pki;
-        const keys = pki.rsa.generateKeyPair(2048);
-        const cert = pki.createCertificate();
-        cert.publicKey = keys.publicKey;
-        cert.serialNumber = '00';
-        cert.validity.notBefore = new Date();
-        cert.validity.notAfter = new Date();
-        cert.validity.notAfter.setHours(cert.validity.notBefore.getHours() + 1);
-        const attrs = [{
-            name: 'commonName',
-            value: domain
-        }];
-        cert.setSubject(attrs);
-        cert.setIssuer(attrs);
-        cert.sign(keys.privateKey);
-
-        return tls.createSecureContext({
-            key: pki.privateKeyToPem(keys.privateKey),
-            cert: pki.certificateToPem(cert)
-        });
+        return tls.createSecureContext(getCertificate(domain));
     }
 }
 
@@ -106,6 +87,7 @@ const webRequest = (req, res) => {
     if (config.maintenance) {
         if (req.url.includes('/.well-known/status')) {
             res.writeHead(503, { 'Content-Type': 'application/json' });
+            // TODO: remove either ok or status, this seems redundant
             res.end(JSON.stringify({
                 ok: false,
                 status: 'down',
@@ -117,9 +99,31 @@ const webRequest = (req, res) => {
         res.writeHead(503, { 'Content-Type': 'text/plain' });
         res.end('Service Unavailable');
         return;
+    } else if (config.initialSync) {
+        if (req.url.includes('/.well-known/acme-challenge')) {
+            if (config.acme.enabled) {
+                handleChallenge(req, res);
+            } else {
+                res.writeHead(404, { 'Content-Type': 'text/plain' });
+                res.end('Not Found');
+            }
+        } else if (req.url.includes('/.well-known/status')) {
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                ok: false,
+                status: 'down',
+                reason: 'cert-init',
+                revisionId: config.revisionId || "initial",
+            }));
+            return;
+        } else {
+            res.writeHead(503, { 'Content-Type': 'text/plain' });
+            res.end('Service Unavailable');
+        }
+        return;
     } else if (config.teapot) {
         if (req.url.includes('/.well-known/status')) {
-            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.writeHead(418, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 ok: false,
                 status: 'down',
@@ -130,6 +134,14 @@ const webRequest = (req, res) => {
         }
         res.writeHead(418, { 'Content-Type': 'text/plain' });
         res.end("It's not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!");
+        return;
+    } else if (req.url.includes('/.well-known/acme-challenge')) {
+        if (config.acme.enabled) {
+            handleChallenge(req, res);
+        } else {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not Found');
+        }
         return;
     } else if (req.url.includes('/.well-known/status')) {
         // console.debug(req.headers['user-agent']);
@@ -199,14 +211,6 @@ const webRequest = (req, res) => {
             res.end('Method Not Allowed');
         }
         return;
-    } else if (req.url.includes('/.well-known/acme-challenge')) {
-        if (config.acme.enabled) {
-            handleChallenge(req, res);
-        } else {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('Not Found');
-        }
-        return;
     }
     const domain = req?.headers?.host?.split(':')[0];
     let invalidDomain = false;
@@ -219,6 +223,7 @@ const webRequest = (req, res) => {
         invalidDomain = "external-direct-ip";
     }
 
+    // TODO: this needs to be reworked to be less resource intensive for faster proxying
     const domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
     const domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
     if (!domConfProxy && !domConfStub) { // No configuration found
@@ -300,6 +305,9 @@ httpServer.listen(httpPort, () => {
     console.log(`HTTP server listening on port ${httpPort}`);
 });
 
-httpsServer.listen(httpsPort, () => {
-    console.log(`HTTPS server listening on port ${httpsPort}`);
-});
+// on cert init, we must assume that certificates have not been created yet
+if (!config.initialSync) {
+    httpsServer.listen(httpsPort, () => {
+        console.log(`HTTPS server listening on port ${httpsPort}`);
+    });
+}

@@ -1,0 +1,30 @@
+<h1 class="text-center">Edit: Certificate {{lookup (lookup acme.domains id) "certificate"}}</h1>
+
+<div class="row">
+    <div class="col">
+    <form id="certForm" class="needs-validation" method="POST" action="/{{prefix}}/{{id}}" novalidate>
+        <div class="mb-3">
+            <label for="domains" class="form-label">Domains (comma separated)</label>
+            <textarea class="form-control" id="domains" name="domains" rows="2" required>{{~#each (lookup (lookup acme.domains id) "entries")}}{{#unless @first}}, {{/unless}}{{this}}{{/each~}}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success">Save Certificate Configuration</button>
+    </form>
+    </div>
+</div>
+<script>
+// JavaScript for form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>

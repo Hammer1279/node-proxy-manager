@@ -15,12 +15,19 @@ import Greenlock from "greenlock";
 import http01Lib from "acme-http-01-standalone";
 const http01 = http01Lib.create({});
 
+// import config from './config.json' with {
+//     type: "json"
+// };
 
+import updateConfigRefs from './migration.js';
+await updateConfigRefs(join(process.cwd(), 'config.json'));
 
-import config from './config.json' with {
-    type: "json"
-};
+const config = (await import('./config.json', {
+    with: { type: "json" }
+})).default;
+
 import { fork } from 'child_process';
+import handleCrash from './crashhandler.js';
 
 if (existsSync(join(process.cwd(), 'auth.json')) && config.cleanAuthFile) {
     unlink(join(process.cwd(), 'auth.json')); // Remove old auth file
@@ -55,10 +62,12 @@ if (config.acme.enabled) {
     });
 }
 
+// Init proxy as clusters https://nodejs.org/api/cluster.html
 let proxyFork = fork('./proxy.js');
 
 proxyFork.on("exit", (code) => {
     console.log(`Proxy server exited with code ${code}`);
+    handleCrash("proxy", code);
 });
 
 proxyFork.on("error", (err) => {
@@ -72,15 +81,21 @@ proxyFork.on("message", (message) => {
     }
 });
 
-const reloadProxy = () => {
+export const reloadProxy = () => {
     proxyFork.kill();
     proxyFork = fork('./proxy.js');
 };
 
+// experimental, use with caution
+export let reloadWebServer = () => {
+    throw new Error("Web server not initialized");
+}
+
 if (config.management.enabled) {
-    const webServerFork = fork("./web/server.js");
+    let webServerFork = fork("./web/server.js");
     webServerFork.on("exit", (code) => {
         console.log(`Web server exited with code ${code}`);
+        handleCrash("management", code);
     });
     webServerFork.on("message", (message) => {
         if (message === 'reload') {
@@ -89,6 +104,10 @@ if (config.management.enabled) {
             console.log("Unknown message from web server:", message);
         }
     });
+    reloadWebServer = () => {
+        webServerFork.kill();
+        webServerFork = fork("./web/server.js");
+    }
 }
 
 // Test server

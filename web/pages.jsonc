@@ -111,6 +111,18 @@
                 },
                 "restriction": false
             },
+            "/acme/*": {
+                "file": "acmeEdit",
+                "scripts": ["variables", "confContext", "urlContext", "noDetails"],
+                "settings": {
+                    "type": "handlebars",
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
             "/config": {
                 "file": null,
                 "scripts": ["config"],
@@ -135,6 +147,11 @@
             // },
         },
         "post": {
+            "/acme/:id(\\d+|new)": {
+                "file": null,
+                "scripts": ["updateCert"],
+                "restriction": false
+            },
             "/:type(*)/:id(\\d+)/delete": {
                 "file": null,
                 "scripts": ["delete"],
@@ -224,7 +241,7 @@
         "title": "NPM Management Console", // tab title
         "headerTitle": "Management Console", // title in navbar
         // base_* are the default stylesheets and scripts (client side) to load on every page
-        "base_stylesheets": ["bootstrap.css", "custom.css"],
+        "base_stylesheets": ["bootstrap-legacy.css", "bootstrap.css", "custom.css"],
         "base_scripts": [],
         "loadbootstrap": true,
         "widgets": [], // not implemented in this version
