@@ -285,6 +285,13 @@ const wsRequest = (req, socket, head) => {
     const domain = req?.headers?.host?.split(':')[0];
     const domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(domain));
     if (domConfProxy && domConfProxy.websocket) {
+        if (domConfProxy.maintenance) {
+            socket.write('HTTP/1.1 503 Service Unavailable\r\n' +
+                'Connection: close\r\n' +
+                '\r\n');
+            socket.destroy();
+            return;
+        }
         proxy.ws(req, socket, head, {
             target: domConfProxy.target,
             xfwd: true,
@@ -292,6 +299,9 @@ const wsRequest = (req, socket, head) => {
             headers: domConfProxy.headers || {}
         });
     } else {
+        socket.write('HTTP/1.1 403 Forbidden\r\n' +
+            'Connection: close\r\n' +
+            '\r\n');
         socket.destroy();
     }
 }
