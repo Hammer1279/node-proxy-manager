@@ -10,12 +10,12 @@ export default async (page, { req, res, next }, config) => {
                 ...values,
                 id: index, // assign the index as an ID
                 enabled: values.enabled ?? true,
+                maintenance: values.maintenance ?? false,
                 special: values.special ?? false,
                 timeout: values.timeout ?? runtimeConfig.timeout,
                 redirect: values.redirect ?? false,
                 redirectTemp: values.redirectTemp ?? false,
-                description: values.description ?? "No description available",
-                maintenance: values.maintenance ?? false
+                description: values.description || "No description available",
             };
         }),
         stubs: runtimeConfig.stub.map((values, index) => {
@@ -26,7 +26,7 @@ export default async (page, { req, res, next }, config) => {
                 status: values.status ?? 200,
                 status_message: STATUS_CODES[values.status] ?? "UNKNOWN",
                 message: values.message ?? "OK",
-                description: values.description ?? "No description available"
+                description: values.description || "No description available"
             }
         }),
         acme: {

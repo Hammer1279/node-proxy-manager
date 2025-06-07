@@ -1,0 +1,171 @@
+{
+    "_note": "This is a sample configuration file, values with '_' will be ignored",
+    "_ports1": "The ports are used for the server, the first port is used for HTTP, the second for HTTPS",
+    "_ports2": "This will be reworked in the future to support multiple ports, while unused, fill in the seperate port configs for future compatibility",
+    "_ports3": "Do not enter more then 2 ports here, it WILL break the server, see note 2 above",
+    "ports": [
+        80,
+        443
+    ],
+    "httpPorts": [
+        80
+    ],
+    "httpsPorts": [
+        443
+    ],
+    "timeout": 30000,
+    "_unconfiguredCloseNoResponse": "If enabled, the server will instantly close the connection instead of responding with 421 Misdirected Request",
+    "unconfiguredCloseNoResponse": true,
+    "_cleanAuthFile": "If enabled, the auth file is purged, this file is to store auth tokens for the management interface",
+    "cleanAuthFile": true,
+    "_initialSync": "refuse all non acme related requests to allow initializing all certificates",
+    "initialSync": false,
+    "_maintenance": "if enabled, all requests to the reverse proxy will be blocked and a 503 Service Unavailable will be returned",
+    "maintenance": false,
+    "_trustedProxies": "trusted proxies are used to identify the real client IP address, if you are behind a reverse proxy, you need to add the IP address of the reverse proxy here",
+    "trustedProxies": [],
+    "management": {
+        "_note": "Management interface is not yet implemented, it will include a web interface similar to Nginx Proxy Manager (hopefully)",
+        "enabled": true,
+        "port": 81,
+        "accounts": {
+            "admin": "admin"
+        },
+        "_logging": "if enabled, the management interface will log all requests to the log file",
+        "logging": false,
+        "logFile": "logs/server.log",
+        "_trustedProxies": "deprecated, use top level trustedProxies instead, this WILL get removed",
+        "trustedProxies": [],
+        "ratelimit": {
+            "enabled": true,
+            "maxAuthRequests": 3,
+            "timeWindow": 300,
+            "whitelist": []
+        },
+        "_embedSite": "https://example.com",
+        "embedSite": false
+    },
+    "fallback": {
+        "_note": "emergency fallback server for different services, if disabled, the process will just be killed",
+        "disable": false,
+        "auth": {
+            "username": "admin",
+            "password": "admin"
+        }
+    },
+    "testserver": {
+        "_note": "This is a test server, it will respond with a 200 OK, if enabled",
+        "enabled": true,
+        "websocket": true,
+        "_fail": "if enabled, the test server will not respond causing a timeout",
+        "fail": false,
+        "port": 8080
+    },
+    "acme": {
+        "_note": "this client does not seem too reliable, use certbot or acme.sh instead if possible",
+        "enabled": false,
+        "_terms": "From the directory link, you will find the terms of service, you need to agree to them before using the acme client",
+        "agreeToTerms": false,
+        "directoryUrl": "https://acme-v02.api.letsencrypt.org/directory",
+        "_configDir": "do not change this unless you know what you are doing",
+        "configDir": "certs/acme",
+        "_email": "change this to your email address",
+        "email": "changme@example.com",
+        "staging": true,
+        "checkInterval": 10,
+        "_domains": "each list is a certificate, each certificate can have multiple domains, it is recommended to only have one single certificate for all domains",
+        "domains": [
+            [
+                "example.com",
+                "www.example.com"
+            ]
+        ]
+    },
+    "ssl": {
+        "_note": "This is the default ssl configuration for acme, ca is optional (keep empty if unused like this: 'ca: []' )",
+        "key": "certs/acme/live/example.com/privkey.pem",
+        "cert": "certs/acme/live/example.com/fullchain.pem",
+        "ca": [
+            "certs/acme/live/example.com/chain.pem"
+        ]
+    },
+    "_proxy": "Define your proxy rules here, the following is an example",
+    "proxy": [
+        {
+            "host": [
+                "localhost"
+            ],
+            "enabled": true,
+            "target": "http://localhost:8080",
+            "ssl": {
+                "key": "certs/localhost/server.key",
+                "cert": "certs/localhost/server.crt",
+                "ca": [
+                    "certs/localhost/rootCA.crt"
+                ]
+            },
+            "redirect": false,
+            "redirectTemp": false,
+            "websocket": true,
+            "secure": false,
+            "maintenance": false,
+            "timeout": 1000,
+            "_headers": {
+                "X-Custom-Header": "customValue"
+            },
+            "auth": {
+                "_note": "this is a placeholder, not yet implemented and subject to change",
+                "enabled": false,
+                "username": "admin",
+                "password": "admin"
+            }
+        },
+        {
+            "description": "",
+            "host": [
+                "test.test"
+            ],
+            "enabled": false,
+            "maintenance": false,
+            "websocket": false,
+            "redirect": false,
+            "redirectTemp": false,
+            "target": "https://example.org",
+            "timeout": 1000,
+            "secure": false,
+            "ssl": {
+                "key": "",
+                "cert": "",
+                "ca": []
+            },
+            "headers": {},
+            "auth": {
+                "enabled": false,
+                "username": "",
+                "password": ""
+            }
+        }
+    ],
+    "stub": [
+        {
+            "_note": "This is the response config for any errors, do not remove this",
+            "host": [
+                "invalid.host",
+                "external-direct-ip"
+            ],
+            "enabled": false,
+            "special": true,
+            "status": 404,
+            "message": "Not Found",
+            "secure": true,
+            "ssl": {
+                "key": "certs/localhost",
+                "cert": "certs/localhost/server.crt",
+                "ca": [
+                    "certs/localhost/rootCA.crt"
+                ]
+            },
+            "write_protected": false
+        }
+    ]
+}

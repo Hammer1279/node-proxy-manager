@@ -263,6 +263,35 @@ const webRequest = (req, res) => {
         res.end();
         return;
     } else {
+        // calculate x-forwarded-for header
+        let ip = "0.0.0.0/0";
+        if ("x-forwarded-for" in req.headers) {
+            if (containsCidr(["127.0.0.1", "::1", ...config.management.trustedProxies], req.ip)) {
+                ip = req.headers['x-forwarded-for'] || req.ip; 
+            } else {
+                console.warn("Proxy IP not in list:", req.ip);
+                return res.sendStatus(403);
+            }
+        } else if ("cf-connecting-ip" in req.headers){
+            throw new Error("cf-connecting-ip header is not supported yet");
+            // if (!cache.has("cfcidrList")) {
+            //     cache.set("cfcidrList", (await superagent.get("https://api.cloudflare.com/client/v4/ips")).body);
+            // }
+            // const cfcidrList = cache.get("cfcidrList");
+            // if (!cfcidrList.success) {
+            //     return next(cfcidrList.errors.join(", "));
+            // }
+            // if (containsCidr([...cfcidrList.result.ipv4_cidrs, ...cfcidrList.result.ipv6_cidrs], req.ip)) {
+            //     ip = req.headers['cf-connecting-ip'] || req.ip;
+            // } else {
+            //     console.warn("CF IP not in list:", req.ip);
+            //     return res.sendStatus(403);
+            // }
+        } else {
+            ip = req.ip; // Do nothing
+        }
+        console.debug('X-Forwarded-For:', ip);
+
         return proxy.web(req, res, {
             target: domConfProxy.target,
             xfwd: true,

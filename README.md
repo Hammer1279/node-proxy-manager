@@ -5,8 +5,7 @@ An NodeJS version of Nginx Proxy Manager that is hopefully more reliable.
 
 ### Prerequisites
 
-- Node.js v17.5.0 or higher
-- npm
+- Node.js v20.6.0 or higher
 - git
 - pm2 (optional)
 
@@ -26,7 +25,13 @@ To update it without many issues:
 1. stash local changes: `git add * && git stash`
 2. update local clone: `git pull`
 3. pop stash: `git stash pop`
-4. check the config with a editor of your choice for any merge conflicts and resolve them
+~~4. check the config with a editor of your choice for any merge conflicts and resolve them~~
+4. update config.json: `npm run migrate`
+5. check for any new config entry that might need to be updated
+
+**Since 0.3.4, migrations are handled seperate from git.\
+On first migration, if the stash is not used, the file will be PERMANENTLY deleted.**
+
 
 ### Autostart using PM2 (Linux/MacOS only I believe)
 
@@ -44,7 +49,7 @@ You can check the status with `pm2 status` and restart the application with `pm2
 ## Can I rely on this project to not shut down and get abandoned soon?
 Despite my repositories mostly beeing archived, I plan on keeping this updated as long as I can. My own Websites all depend on this software, so I always have a incentive to develop this further and keep it maintained to the best of my abilities.
 
-Regarding the high archival rate on my profile, most of those were at one point closed-source projects that were shut down, usually after shutdown, I release full or part of the source code to help future developers figure things out just like others have helped me with open-sourcing their applications.
+Regarding the high archival rate on my profile, most of those were at one point closed-source projects that were shut down. Usually after shutdown, I release full or part of the source code to help future developers figure things out just like others have helped me with open-sourcing their applications.
 
 ## Origins
 As a previous user of Nginx Proxy Manager, I was actually quite happy with it.

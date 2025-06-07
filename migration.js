@@ -1,3 +1,5 @@
+// Update configuration file to the newest version, ensuring backward compatibility
+
 import { readFile, writeFile } from "node:fs/promises";
 
 const updates = [
@@ -10,7 +12,9 @@ const updates = [
             if (data.management.password) {
                 return { [value]: data.management.password };
             }
-            return {};
+            return {
+                ["admin"]: "admin" // Default admin account
+            };
         }
     },
     {
@@ -20,7 +24,32 @@ const updates = [
     {
         key: "management.username",
         to: null // Remove this property after migration
+    },
+    // Version 0.3.4
+    {
+        key: "management.trustedProxies",
+        to: "trustedProxies",
+        transform: (value, data) => {
+            if (data.management.trustedProxies) {
+                return data.management.trustedProxies;
+            }
+            return [];
+        }
+    },
+    {
+        key: "management.trustedProxies",
+        to: null // Remove this property after migration
+    },
+    {
+        key: "management._thrustedProxies",
+        to: null // Remove this property after migration
     }
+    // Version X.X.X
+    // activate this in the next version (so that git does not delete values before migration)
+    // {
+    //     key: "management.trustedProxies",
+    //     to: null // Remove this property after migration
+    // },
 ];
 
 export default async function updateConfigRefs(file) {
@@ -69,4 +98,24 @@ export default async function updateConfigRefs(file) {
             reject(error);
         }
     });
+}
+
+// Run the migration if this file is called directly with an argument
+if (process.argv[1].split('/').pop() === import.meta.url.split('/').pop()) {
+    const configFile = process.argv[2] || "./config.json"; // Default config file path
+
+    if (!configFile) {
+        console.error('Error: Please provide a config file path as an argument');
+        process.exit(1);
+    }
+    
+    updateConfigRefs(configFile)
+        .then(() => {
+            console.log(`Successfully migrated configuration file: ${configFile}`);
+            process.exit(0);
+        })
+        .catch(error => {
+            console.error(`Error migrating configuration: ${error.message}`);
+            process.exit(1);
+        });
 }

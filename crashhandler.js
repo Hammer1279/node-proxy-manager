@@ -42,6 +42,10 @@ function basicAuth(req, res, user, pass, realm="Debug Access") {
 
 // Fallback server logic
 const serverLogic = (req, res) => {
+    const authorized = basicAuth(req, res, config.fallback.auth.username, config.fallback.auth.password);
+    if (!authorized) {
+        return;
+    }
     if (req.url.includes('/.well-known/status')) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end(JSON.stringify({

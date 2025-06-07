@@ -1,12 +1,15 @@
 {
   "name": "node-proxy-manager",
   "fullname": "Node Proxy Manager",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "An NodeJS alternative to Nginx Proxy Manager that is hopefully more reliable.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js -e .ejs,.mustache,.js,.html,.json,.jsonc --ignore logs/ --ignore certs/ --ignore node_modules/ --ignore .git/ --ignore .vscode/ --ignore .idea/ --ignore .DS_Store/ --ignore .gitignore"
+    "dev": "npm run dev:run",
+    "dev:run": "nodemon index.js -e .ejs,.mustache,.js,.html,.json,.jsonc --ignore logs/ --ignore certs/ --ignore node_modules/ --ignore .git/ --ignore .vscode/ --ignore .idea/ --ignore .DS_Store/ --ignore .gitignore",
+    "dev:cfg": "cp config.json config.example.json",
+    "migrate": "node ./migration.js"
   },
   "keywords": [],
   "author": "Hammer1279",

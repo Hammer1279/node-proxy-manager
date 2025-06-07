@@ -322,16 +322,17 @@ let settings = {
     pages: [...pages.navpages],
 };
 
-app.get('/', async (req, res) => {
-    try {
-        const currentConfigFile = await readFile(join(process.cwd(), 'config.json'), 'utf-8');
-        const currentConfig = JSON.parse(currentConfigFile);
-        res.json(currentConfig);
-    } catch (error) {
-        console.error('Error reading config file:', error);
-        res.status(500).json({ error: 'Failed to read configuration' });
-    }
-});
+// DONT DO THAT, this risks exposing sensitive information if the page config is ever not properly read
+// app.get('/', async (req, res) => {
+//     try {
+//         const currentConfigFile = await readFile(join(process.cwd(), 'config.json'), 'utf-8');
+//         const currentConfig = JSON.parse(currentConfigFile);
+//         res.json(currentConfig);
+//     } catch (error) {
+//         console.error('Error reading config file:', error);
+//         res.status(500).json({ error: 'Failed to read configuration' });
+//     }
+// });
 
 // Error handling middleware
 app.use((err, req, res, next) => {

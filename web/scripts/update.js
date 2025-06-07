@@ -73,33 +73,60 @@ export default async (page, { req, res, next }, config) => {
     } else {
         if (type == "proxy") {
             const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
-            const item = req.body;
-            runtimeConfig[type].push({
-                "description": item.description,
-                "host": item.host.split(','),
-                "enabled": item.enabled[item.enabled.length - 1] === "true" || item.enabled[item.enabled.length - 1] == "on",
-                "maintenance": item.maintenance[item.maintenance.length - 1] === "true" || item.maintenance[item.maintenance.length - 1] == "on",
-                "websocket": item.websocket[item.websocket.length - 1] === "true" || item.websocket[item.websocket.length - 1] == "on",
-                "redirect": item.redirect[item.redirect.length - 1] === "true" || item.redirect[item.redirect.length - 1] == "on",
-                "redirectTemp": item.redirectTemp[item.redirectTemp.length - 1] === "true" || item.redirectTemp[item.redirectTemp.length - 1] == "on",
-                "target": item.target,
-                "timeout": parseInt(item.timeout),
-                "secure": item.secure[item.secure.length - 1] === "true" || item.secure[item.secure.length - 1] == "on",
+            
+            // default proxy item
+            let item = {
+                "description": "",
+                "host": [],
+                "enabled": false,
+                "maintenance": false,
+                "websocket": false,
+                "redirect": false,
+                "redirectTemp": false,
+                "target": "",
+                "timeout": 0,
+                "secure": false,
                 "ssl": {
-                    "key": item.ssl.key || "",
-                    "cert": item.ssl.cert || "",
-                    "ca": item.ssl.ca ? item.ssl.ca.split(',') : []
+                    "key": "",
+                    "cert": "",
+                    "ca": []
                 },
                 "headers": {},
                 "auth": {
-                    "enabled": item.auth.enabled[item.auth.enabled.length - 1] === "true" || item.auth.enabled[item.auth.enabled.length - 1] == "on",
-                    "username": item.auth.username || "",
-                    "password": item.auth.password || "",
+                    "enabled": false,
+                    "username": "",
+                    "password": ""
                 }
-            });
+            };
+
+            // parse request body into item
+            for (const [key, value] of Object.entries(req.body)) {
+                if (key === 'host') {
+                    item[key] = value.split(',');
+                } else if (key === 'timeout') {
+                    item[key] = parseInt(value);
+                } else if (key === 'ssl') {
+                    item.ssl.key = value.key || item.ssl.key;
+                    item.ssl.cert = value.cert || item.ssl.cert;
+                    item.ssl.ca = value.ca ? value.ca.split(',') : item.ssl.ca;
+                } else if (key === 'auth') {
+                    item.auth.enabled = value.enabled[value.enabled.length - 1] === "true" || value.enabled[value.enabled.length - 1] === "on";
+                    item.auth.username = value.username || item.auth.username;
+                    item.auth.password = value.password || item.auth.password;
+                } else if (typeof value === 'object') {
+                    // Handle boolean values that come as arrays
+                    item[key] = value[value.length - 1] === "true" || value[value.length - 1] === "on";
+                } else {
+                    item[key] = value;
+                }
+            }
+
+            runtimeConfig[type].push(item);
             await writeFile(join(".", 'config.json'), JSON.stringify(runtimeConfig, null, 4), 'utf-8');
         } else if (type == "stub") {
             const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
+            
+            // TODO: rework stub like proxy if it works
             const item = req.body;
             runtimeConfig[type].push({
                 "description": item.description,

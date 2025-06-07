@@ -19,8 +19,9 @@ const http01 = http01Lib.create({});
 //     type: "json"
 // };
 
-import updateConfigRefs from './migration.js';
-await updateConfigRefs(join(process.cwd(), 'config.json'));
+// run "npm run migrate" to update config.json references instead
+// import updateConfigRefs from './migration.js';
+// await updateConfigRefs(join(process.cwd(), 'config.json'));
 
 const config = (await import('./config.json', {
     with: { type: "json" }
@@ -28,6 +29,7 @@ const config = (await import('./config.json', {
 
 import { fork } from 'child_process';
 import handleCrash from './crashhandler.js';
+import { getCertificate } from './CertManager.js';
 
 if (existsSync(join(process.cwd(), 'auth.json')) && config.cleanAuthFile) {
     unlink(join(process.cwd(), 'auth.json')); // Remove old auth file
@@ -148,5 +150,44 @@ if (config.testserver.enabled) {
                 ws.close(1000, 'Goodbye: timeout');
             }, 10000);
         });
+
+        // Secure WebSocket test server
+        if (false) {
+            // try to replicate this error
+            // Error during request to /agent.ashx: write EPROTO 80486B1C5E700000:error:0A00010B:SSL routines:ssl3_get_record:wrong version number:../deps/openssl/openssl/ssl/record/ssl3_record.c:354:
+
+            // secure server
+            const httpsserver = createServerHttps(getCertificate("localhost"), (req, res) => { });
+
+            // Create secure WebSocket server
+            const wsss = new WebSocketServer({
+                server: httpsserver
+            });
+
+            wsss.on("headers", (headers, req) => {
+                console.log('Test server secure WebSocket headers:', headers, req.url);
+            });
+
+            wsss.on('connection', (ws, req) => {
+                console.log('Test server secure WebSocket connection');
+                // console.debug('Test server WebSocket headers:', ws.protocol, ws._socket.server._connectionKey);
+                ws.on('message', (message) => {
+                    console.log('Test server secure WebSocket message:', message.toString());
+                    ws.send(message.toString());
+                });
+                ws.send('Hello from the secure test server!');
+                setTimeout(() => {
+                    ws.close(1000, 'Goodbye: timeout');
+                }, 10000);
+            });
+
+            wsss.on('error', (error) => {
+                console.error('Secure WebSocket server error:', error);
+            });
+
+            httpsserver.listen(config.testserver.port + 1, () => {
+                console.log(`Secure test server listening on port ${config.testserver.port + 1}`);
+            });
+        }
     }
 }
