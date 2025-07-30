@@ -1,0 +1,95 @@
+<style>
+    .homebody {
+        position: relative;
+        width: 100%;
+        /* overflow: hidden; */
+    }
+    @media screen and (max-width: 535px) {
+        .homebody {
+            overflow: initial;
+        }
+    }
+</style>
+
+<div class="homebody">
+
+    <!-- Text Block -->
+    <div class="text-block" style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        color: white;
+        /* background-color: rgba(0, 0, 0, 0.5); */
+        padding: 20px;
+        box-sizing: border-box;
+        z-index: 10;
+        line-height: 1.5;">
+        <h1 class="h1 text-center">
+            Node Proxy Manager Management Console
+        </h1>
+
+        <h2>
+            <a href="/proxy">Proxy Domains</a>
+        </h2>
+        <p>
+            Allows incoming requests to be proxied to other servers.<br>
+            There are/is {{proxyCount}} configured Proxy Domain(s).
+        </p>
+
+        <h2>
+            <a href="/redirects" {{! style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;" }}>Redirect Hosts</a>
+        </h2>
+        <p>
+            Allows to redirect domains to other domains.<br>
+            There are/is {{redirectCount}} configured Redirect Host(s).
+        </p>
+
+        <h2>
+            <a href="/port-forwards" style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;">Port Forwards</a>
+        </h2>
+        <p>
+            This feature is planned for a future release.
+        </p>
+
+        <h2>
+            <a href="/stub">Stubs</a>
+        </h2>
+        <p>
+            Set custom status codes and responses for domains (like setting them to 404).<br>
+            There are/is {{stubCount}} configured Stub Domain(s).
+        </p>
+
+        <h2>
+            <a href="/acme">Certificates</a>
+        </h2>
+        <div class="alert alert-info py-2 mb-2" role="alert">
+            <small>
+            Note: This certificate feature will be replaced by a dedicated certificate manager in future versions.
+            </small>
+        </div>
+        <p>
+            Generate TLS Certificates with Let's Encrypt.<br>
+            There are/is {{certCount}} managed certificate(s) with {{certCount2}} managed domain(s).
+        </p>
+        
+        <h2>
+            <a href="/config/edit">Configuration</a>
+        </h2>
+        <p>
+            View or Edit current running configuration.<br>
+            Currently listening on ports: {{ports}}
+        </p>
+
+        {{!-- <h2>
+            <a href="/settings" style="pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;">Settings</a>
+        </h2>
+        <p>
+            Change settings for {{pkgFullName}} and the Web Interface.
+        </p> --}}
+
+    </div>
+
+    <!-- Copyright © Hammer1279 (2025) -->
+
+</div>

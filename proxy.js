@@ -1,11 +1,14 @@
-import { readdirSync, readFileSync, writeFileSync } from 'fs';
-import { readdir, readFile } from 'fs/promises';
-import { join } from 'path';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import pkg from 'http-proxy';
 const { createProxyServer } = pkg;
-import { createServer as createServerHttp, IncomingMessage, ServerResponse } from 'http';
-import { createServer as createServerHttps } from 'https';
-import tls from 'tls';
+import { createServer as createServerHttp, IncomingMessage, ServerResponse, request as httpRequest } from 'node:http';
+import { createServer as createServerHttps, request as httpsRequest } from 'node:https';
+import { createSecureServer as createServerHttp2 } from 'node:http2';
+import { containsCidr } from "cidr-tools";
+import superagent from 'superagent';
+import tls from 'node:tls';
 
 import initialConfig from './config.json' with {
     type: "json"
@@ -14,6 +17,21 @@ import { handleChallenge } from './acme.js';
 import forge from 'node-forge';
 import { Socket } from 'net';
 import { getCertificate } from './CertManager.js';
+
+import NodeCache from 'node-cache';
+
+const cache = new NodeCache({
+    stdTTL: 43200, // 12 hours
+    useClones: false
+});
+
+async function updateCFCIDRList() {
+    if (!cache.has("cfcidrList")) {
+        cache.set("cfcidrList", (await superagent.get("https://api.cloudflare.com/client/v4/ips")).body);
+    }
+}
+await updateCFCIDRList();
+setInterval(updateCFCIDRList, 6 * 60 * 60 * 1000); // refresh cache every 6 hours
 
 // always use in memory config for best performance (no disk IO)
 let config = initialConfig;
@@ -32,7 +50,7 @@ async function reloadConfig(reqBody) {
 const [httpPort, httpsPort] = config.ports;
 
 // function to pick out the key + certs dynamically based on the domain name
-function getSecureContext(domain) {
+export function getSecureContext(domain) {
     const files = readdirSync('./certs');
     const domConf = [
         ...config.stub.filter(({ host: hosts }) => hosts.includes(domain)),
@@ -49,11 +67,16 @@ function getSecureContext(domain) {
             });
         }
 
-        return tls.createSecureContext({
+        const secureContextOptions = {
             key: readFileSync(domConf.ssl.key),
-            cert: readFileSync(domConf.ssl.cert),
-            ca: domConf.ssl.ca.map(caPath => readFileSync(caPath))
-        }).context;
+            cert: readFileSync(domConf.ssl.cert)
+        };
+
+        if (domConf.ssl.ca && domConf.ssl.ca[0] != "") {
+            secureContextOptions.ca = domConf.ssl.ca.map(caPath => readFileSync(caPath));
+        }
+
+        return tls.createSecureContext(secureContextOptions).context;
     } catch (error) {
         console.error(`Error loading certificates for ${domain}:`, error);
         return tls.createSecureContext(getCertificate(domain));
@@ -62,7 +85,12 @@ function getSecureContext(domain) {
 
 const proxy = createProxyServer({
     secure: false, // Allow self-signed certificates,
-    ws: true
+    ws: true, // Enable WebSocket support
+    xfwd: true, // Enable X-Forwarded-For header
+    timeout: config.timeout || 10000, // 10 seconds timeout
+    headers: {
+        "X-Forwarded-By": "Node-Proxy-Manager",
+    },
 });
 
 proxy.on('error', (err, req, res) => {
@@ -83,6 +111,17 @@ proxy.on('error', (err, req, res) => {
         }
     }
 });
+
+/**
+ * Handle .well-known requests (might interfere with targets .well-known, so this should forward anything unknown to us)
+ * @param {IncomingMessage} req
+ * @param {ServerResponse} res
+ * @param {(req: IncomingMessage, res: ServerResponse) => void} next - Next handler in the chain.
+ * @returns {void}
+ */
+function wellKnown(req, res, next) {
+
+}
 
 /**
  * Handle HTTP/S requests
@@ -140,8 +179,10 @@ const webRequest = (req, res) => {
             }));
             return;
         }
-        res.writeHead(418, { 'Content-Type': 'text/plain' });
-        res.end("It's not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!");
+        // res.writeHead(418, { 'Content-Type': 'text/plain' });
+        // res.end("It's not possible to control this teapot via HTCPCP/1.0, Teapots are not for brewing coffee!");
+        res.writeHead(505, { 'Content-Type': 'text/plain' });
+        res.end("This server is set up to only handle HTCPCP/1.0 requests, but can only handle HTTP requests.\r\nPlease contact the server administrator if you think this is a mistake.");
         return;
     } else if (req.url.includes('/.well-known/acme-challenge')) {
         if (config.acme.enabled) {
@@ -231,19 +272,49 @@ const webRequest = (req, res) => {
         invalidDomain = "external-direct-ip";
     }
 
+    let domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
+    let domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
+    domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain)) ?? domConfProxy;
+    domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain)) ?? domConfStub;
+
     // TODO: this needs to be reworked to be less resource intensive for faster proxying
-    const domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
-    const domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain));
-    if (!domConfProxy && !domConfStub) { // No configuration found
-        if (config.unconfiguredCloseNoResponse) {
-            res.destroy();
-        } else {
-            res.writeHead(421, { 'Content-Type': 'text/plain' });
-            res.end('Misdirected Request');
-        }
-        return;
-    } else if (domConfStub) {
-        res.writeHead(domConfStub.status || 200, domConfStub.headers || { 'Content-Type': 'text/plain' });
+    // if (!domConfProxy && !domConfStub) { // No configuration found
+    //     if (config.unconfiguredCloseNoResponse) {
+    //         res.destroy();
+    //     } else {
+    //         const defaultProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
+    //         const defaultStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
+    //         if (defaultStub) {
+    //             res.writeHead(defaultStub.status || 200, defaultStub.headers || { "Content-Type": defaultStub?.contentType ?? "text/plain" });
+    //             res.end(defaultStub.message || 'OK');
+    //         } else if (defaultProxy) {
+    //             if (defaultProxy.maintenance) {
+    //                 res.writeHead(503, { 'Content-Type': 'text/plain' });
+    //                 res.end('Service Unavailable');
+    //             } else if (defaultProxy.redirect) {
+    //                 res.writeHead(defaultProxy.redirectTemp ? 302 : 301, { 'Location': defaultProxy.target });
+    //                 res.end();
+    //             } else {
+    //                 proxy.web(req, res, {
+    //                     target: defaultProxy.target,
+    //                     xfwd: true,
+    //                     ws: defaultProxy.websocket,
+    //                     websocket: defaultProxy.websocket,
+    //                     proxyTimeout: defaultProxy.timeout || config.timeout,
+    //                     headers: defaultProxy.headers || {}
+    //                 });
+    //             }
+    //         } else {
+    //             res.writeHead(421, { 'Content-Type': 'text/plain' });
+    //             res.end('Misdirected Request');
+    //         }
+    //     }
+
+    //     return;
+    // } else 
+
+    if (domConfStub) {
+        res.writeHead(domConfStub.status || 200, domConfStub.headers || { "Content-Type": domConfStub?.contentType ?? "text/plain" });
         res.end(domConfStub.message || 'OK');
         return;
     } else if (domConfProxy?.maintenance) {
@@ -263,34 +334,62 @@ const webRequest = (req, res) => {
         res.end();
         return;
     } else {
+        // Web Proxy request
+
+        // Check for basic auth (others coming Soon™)
+        if (domConfProxy?.auth?.enabled) {
+            const authHeader = req.headers['authorization'];
+            if (!authHeader || !authHeader.startsWith('Basic ')) {
+                res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Secure Area"' });
+                res.end('Unauthorized');
+                return;
+            }
+            const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+            const username = credentials[0];
+            const password = credentials[1];
+
+            console.debug(`Basic Auth for ${domain}:`, username, password);
+
+            if (username !== domConfProxy.auth.username || password !== domConfProxy.auth.password) {
+                res.writeHead(403, { 'Content-Type': 'text/plain' });
+                res.end('Forbidden');
+                return;
+            }
+        }
+
         // calculate x-forwarded-for header
         let ip = "0.0.0.0/0";
-        if ("x-forwarded-for" in req.headers) {
-            if (containsCidr(["127.0.0.1", "::1", ...config.management.trustedProxies], req.ip)) {
-                ip = req.headers['x-forwarded-for'] || req.ip; 
-            } else {
-                console.warn("Proxy IP not in list:", req.ip);
-                return res.sendStatus(403);
+        const formattedIp = req.socket.remoteAddress.replace("::ffff:", ""); // remove IPv6 prefix if present
+        console.log("Request Headers:", req.headers);
+        if ("cf-connecting-ip" in req.headers) {
+            const cfcidrList = cache.get("cfcidrList");
+            console.log(cfcidrList);
+            if (!cfcidrList.success) {
+                return next(cfcidrList.errors.join(", "));
             }
-        } else if ("cf-connecting-ip" in req.headers){
-            throw new Error("cf-connecting-ip header is not supported yet");
-            // if (!cache.has("cfcidrList")) {
-            //     cache.set("cfcidrList", (await superagent.get("https://api.cloudflare.com/client/v4/ips")).body);
-            // }
-            // const cfcidrList = cache.get("cfcidrList");
-            // if (!cfcidrList.success) {
-            //     return next(cfcidrList.errors.join(", "));
-            // }
-            // if (containsCidr([...cfcidrList.result.ipv4_cidrs, ...cfcidrList.result.ipv6_cidrs], req.ip)) {
-            //     ip = req.headers['cf-connecting-ip'] || req.ip;
-            // } else {
-            //     console.warn("CF IP not in list:", req.ip);
-            //     return res.sendStatus(403);
-            // }
+            if (containsCidr([...cfcidrList.result.ipv4_cidrs, ...cfcidrList.result.ipv6_cidrs], formattedIp)) {
+                ip = req.headers['cf-connecting-ip'] || formattedIp;
+            } else {
+                console.warn("CF IP not in list:", formattedIp);
+                return res.writeHead(403, { 'Content-Type': 'text/plain' }).end('Forbidden');
+            }
+        } else if ("x-forwarded-for" in req.headers) {
+            console.log(formattedIp, req.headers['x-forwarded-for']);
+            console.log("Trusted Proxies:", config.trustedProxies);
+            if (containsCidr(["127.0.0.1", "::1", ...config.trustedProxies], formattedIp)) {
+                ip = req.headers['x-forwarded-for'] || formattedIp;
+            } else {
+                console.warn("Proxy IP not in list:", formattedIp);
+                return res.writeHead(403, { 'Content-Type': 'text/plain' }).end('Forbidden');
+            }
         } else {
-            ip = req.ip; // Do nothing
+            ip = formattedIp; // Do nothing
         }
-        console.debug('X-Forwarded-For:', ip);
+        // console.debug('X-Forwarded-For:', ip);
+
+        if (domConfProxy?.http2) {
+
+        }
 
         return proxy.web(req, res, {
             target: domConfProxy.target,
@@ -298,7 +397,13 @@ const webRequest = (req, res) => {
             ws: domConfProxy.websocket,
             websocket: domConfProxy.websocket,
             proxyTimeout: domConfProxy.timeout || config.timeout,
-            headers: domConfProxy.headers || {}
+            headers: {
+                "Host": domain,
+                "X-Forwarded-For": ip,
+                "X-Forwarded-Proto": req.socket.localPort === 443 ? 'https' : 'http',
+                "X-Real-Ip": ip,
+                ...domConfProxy.headers,
+            }
         });
     }
 }
@@ -346,8 +451,79 @@ const httpsServer = createServerHttps({
     }
 }, webRequest);
 
+// Experimental HTTP/2 support
+const http2Server = createServerHttp2({
+    allowHTTP1: true, // Allow HTTP/1.X fallback
+    SNICallback: (hostname, cb) => {
+        console.log('SNICallback', hostname);
+        const secureContext = getSecureContext(hostname);
+        cb(null, secureContext);
+    }
+});
+
+http2Server.on("stream", (stream, headers) => {
+    console.log('HTTP/2 stream', headers);
+
+    // console.log(headers);
+
+    const filteredHeaders = Object.fromEntries(
+        Object.entries(headers).filter(([key]) => !key.startsWith(':'))
+    );
+
+    const req = {
+        method: headers[':method'],
+        url: headers[':path'],
+        headers: {
+            ...filteredHeaders,
+            "host": headers[':authority'] || headers[':host'],
+        },
+        stream,
+        socket: stream.session.socket,
+        connection: stream.session.socket,
+        httpVersion: '2.0',
+        // for body parsing implement on data and end
+        on: stream.on.bind(stream),
+        pipe: stream.pipe.bind(stream),
+        unpipe: stream.unpipe.bind(stream),
+    };
+
+    const customHeaders = {};
+
+    // Minimal ServerResponse-like object
+    const res = {
+        writeHead: (status, headersObj) => {
+            console.log('HTTP/2 response headers:', status, headersObj);
+            stream.respond({ ':status': status, ...customHeaders, ...headersObj });
+        },
+        end: (data) => stream.end(data),
+        write: (chunk) => stream.write(chunk),
+        setHeader: (name, value) => {
+            console.log('HTTP/2 set header:', name, value);
+            customHeaders[name.toLowerCase()] = value;
+        },
+        // pipe: (dest) => stream.pipe(dest),
+        // unpipe: (dest) => stream.unpipe(dest),
+    };
+
+    webRequest(req, res);
+
+    // stream.respond({
+    //     ':status': 200,
+    //     'content-type': 'text/plain'
+    // });
+    // stream.end('OK');
+
+});
+// http2Server.on("request", (req, res) => {
+//     if (!res.closed) {
+//         webRequest(req, res);
+//     }
+// });
+// http2Server.on("session", (session) => {});
+
 httpServer.on('upgrade', wsRequest);
 httpsServer.on('upgrade', wsRequest);
+http2Server.on('upgrade', wsRequest);
 
 httpServer.listen(httpPort, () => {
     console.log(`HTTP server listening on port ${httpPort}`);
@@ -355,7 +531,16 @@ httpServer.listen(httpPort, () => {
 
 // on cert init, we must assume that certificates have not been created yet
 if (!config.initialSync) {
-    httpsServer.listen(httpsPort, () => {
-        console.log(`HTTPS server listening on port ${httpsPort}`);
-    });
+    // httpsServer.listen(httpsPort, () => {
+    //     console.log(`HTTPS server listening on port ${httpsPort}`);
+    // });
+    if (!config.http2) {
+        httpsServer.listen(httpsPort, () => {
+            console.log(`HTTPS server listening on port ${httpsPort}`);
+        });
+    } else {
+        http2Server.listen(httpsPort, () => {
+            console.log(`HTTP/2 server listening on port ${httpsPort}`);
+        });
+    }
 }

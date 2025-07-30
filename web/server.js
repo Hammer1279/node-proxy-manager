@@ -48,8 +48,9 @@ if (config.management.logging) {
 }
 
 app.use((req, res, next) => {
-    res.setHeader('Server', "HT Web-Framework V2-lite");
-    res.setHeader('X-Powered-By', "HT Web-Framework V2-lite");
+    res.setHeader("Server", "HT Web-Framework V2");
+    res.setHeader("X-Powered-By", "HT Web-Framework V2");
+    res.setHeader("Content-Language", "en");
     next();
 });
 
@@ -73,13 +74,13 @@ app.use((req, res, next) => {
 app.use(async (req, res, next) => {
     let ip = "0.0.0.0/0";
     if ("x-forwarded-for" in req.headers) {
-        if (containsCidr(["127.0.0.1", "::1", ...config.management.trustedProxies], req.ip)) {
-            ip = req.headers['x-forwarded-for'] || req.ip; 
+        if (containsCidr(["127.0.0.1", "::1", ...config.trustedProxies], req.ip)) {
+            ip = req.headers['x-forwarded-for'] || req.ip;
         } else {
             console.warn("Proxy IP not in list:", req.ip);
             return res.sendStatus(403);
         }
-    } else if ("cf-connecting-ip" in req.headers){
+    } else if ("cf-connecting-ip" in req.headers) {
         if (!cache.has("cfcidrList")) {
             cache.set("cfcidrList", (await superagent.get("https://api.cloudflare.com/client/v4/ips")).body);
         }
@@ -99,6 +100,9 @@ app.use(async (req, res, next) => {
     req.realIp = ip;
     next();
 });
+
+// Serve favicon.ico at root without auth
+app.use("/favicon.ico", express.static(join(process.cwd(), "web", "public", "img", "logo.ico")));
 
 // Rate limiter
 app.use(async (req, res, next) => {
@@ -208,6 +212,20 @@ for (const path in pages.paths.get) {
         if (element.file) {
             app.get(path, async (req, res, next) => {
                 let patches = {}
+                try {
+                    for await (const file of pages.settings.scripts) {
+                        const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                        let result = module.get ? await module.get(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                        if (isJSON(result) && !(result?.done ?? false)) {
+                            patches = { ...patches, ...result }
+                        } else {
+                            console.debug("Request already handled, returning...")
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    return next(error);
+                }
                 if (element.scripts) {
                     try {
                         for await (const file of element.scripts) {
@@ -243,6 +261,14 @@ for (const path in pages.paths.get) {
             })
         } else {
             app.get(path, async (req, res, next) => {
+                try {
+                    for await (const file of pages.settings.scripts) {
+                        const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                        module.get ? await module.get(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                    }
+                } catch (error) {
+                    return next(error);
+                }
                 if (element.scripts) {
                     try {
                         for await (const file of element.scripts) {
@@ -266,6 +292,20 @@ for (const path in pages.paths.post) {
             app.post(path, async (req, res, next) => {
                 let patches = {}
                 if (element.scripts) {
+                    try {
+                        for await (const file of pages.settings.scripts) {
+                            const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                            let result = module.post ? await module.post(element, { req, res, next }, config) : await module.default(element, { req, res, next }, config);
+                            if (isJSON(result) && !(result?.done ?? false)) {
+                                patches = { ...patches, ...result }
+                            } else {
+                                console.debug("Request already handled, returning...")
+                                return;
+                            }
+                        }
+                    } catch (error) {
+                        return next(error);
+                    }
                     try {
                         for await (const file of element.scripts) {
                             const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
@@ -300,6 +340,17 @@ for (const path in pages.paths.post) {
             })
         } else {
             app.post(path, async (req, res, next) => {
+                try {
+                    for await (const file of pages.settings.scripts) {
+                        const module = await import("file://" + resolve(join('web', 'scripts', file + ".js")));
+                        if (module.post) {
+                            await module.post(element, { req, res, next }, config);
+                        }
+                        // base scripts are always invoked so they might not have a post handler
+                    }
+                } catch (error) {
+                    return next(error);
+                }
                 if (element.scripts) {
                     try {
                         for await (const file of element.scripts) {
@@ -336,6 +387,7 @@ let settings = {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+    // at this point we presume the user has checked auth already
     console.error('Error:', err);
     // res.status(500).json({
     //     error: 'Internal Server Error',

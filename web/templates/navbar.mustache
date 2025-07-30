@@ -2,13 +2,14 @@
     <div class="container-fluid">
         {{! <a class="navbar-brand" href="#">{{headerTitle\}\}</a> }}
         <a class="navbar-brand" href="/">
-            <img src="/static/img/logo.jpg" width="35" height="35" class="d-inline-block align-top" alt="">
+            <img src="/static/img/logo.png" width="35" height="35" class="d-inline-block align-top" alt="">
             {{headerTitle}}
         <p class="mobileonly " style="font-size: x-small; margin-bottom: 0; height: 0; text-align: end"><br>&copy; 2025 Copyright: Hammer1279</p>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01"
             aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+            {{! <span class="navbar-toggler-icon"></span> <!-- this is from bootstrap, for some reason that doesnt load anymore, so we use font awesome now (no animation :c ) --> }}
+            <i class="fas fa-bars"></i>
         </button>
         <div class="collapse navbar-collapse" id="navbarColor01">
             <ul class="navbar-nav me-auto">

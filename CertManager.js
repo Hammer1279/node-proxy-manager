@@ -12,10 +12,12 @@ function generateCertificate(hostname) {
     const keys = pki.rsa.generateKeyPair(2048);
     const cert = pki.createCertificate();
     cert.publicKey = keys.publicKey;
-    cert.serialNumber = '00';
+    cert.serialNumber = Math.floor(Math.random() * 10).toString(); // Random serial number
     cert.validity.notBefore = new Date();
     cert.validity.notAfter = new Date();
-    cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1); // 1-year validity
+    // cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1); // 1-year validity
+    // cert.validity.notAfter.setDate(cert.validity.notBefore.getDate() + 1); // 1-day validity
+    cert.validity.notAfter.setHours(cert.validity.notBefore.getHours() + 1); // 1-hour validity
     const attrs = [{ name: 'commonName', value: hostname || 'localhost' }];
     cert.setSubject(attrs);
     cert.setIssuer(attrs);

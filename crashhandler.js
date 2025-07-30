@@ -90,6 +90,12 @@ const serverLogic = (req, res) => {
     }
 };
 
+/**
+ * Start the fallback server
+ * @param {number} httpPort - HTTP port for the fallback server
+ * @param {number} [httpsPort] - Optional HTTPS port for the fallback server, if not provided, only HTTP server will be started
+ * @deprecated servers created using this function somehow linger after exiting or restarting the main process, needing to be manually killed
+ */
 function startServer(httpPort, httpsPort) {
     let httpServer, httpsServer;
 
@@ -116,6 +122,12 @@ function startServer(httpPort, httpsPort) {
     return { httpServer, httpsServer };
 }
 
+/**
+ * Handle application crashes and restart fallback servers if necessary
+ * @param {string} application name of the application that crashed, either "proxy" or "management" for restart logic for now
+ * @param {number} code exit code of the crashed application
+ * @deprecated this is very buggy and unreliable, just let the process crash
+ */
 export default function handleCrash(application, code) {
     if (config.fallback.disable) {
         console.info(`${application} exited with code ${code}. Stopping main process.`);

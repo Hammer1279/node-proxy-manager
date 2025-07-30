@@ -4,8 +4,11 @@
         "get": {
             "/": {
                 "file": "home",
-                "scripts": ["variables"],
+                "scripts": [
+                    "variables"
+                ],
                 "settings": {
+                    "type": "handlebars",
                     "stylesheets": [],
                     "scripts": [],
                     "widgets": [],
@@ -13,9 +16,11 @@
                 },
                 "restriction": false
             },
-            "/ejs-test": {
+            "/test": {
                 "file": "test",
-                "scripts": ["variables"],
+                "scripts": [
+                    "variables"
+                ],
                 "settings": {
                     "type": "ejs",
                     "stylesheets": [],
@@ -27,7 +32,9 @@
             },
             "/about": {
                 "file": "about",
-                "scripts": ["variables"],
+                "scripts": [
+                    "variables"
+                ],
                 "settings": {
                     "stylesheets": [],
                     "scripts": [],
@@ -36,37 +43,85 @@
                 },
                 "restriction": false
             },
-            "/:type(*)/:id(\\d+)/toggle": {
+            "/:type(*)/:id(\\d+)/toggle(\/)?(:toggletype([a-zA-Z]+))?": {
                 "file": null,
-                "scripts": ["toggle"],
+                "scripts": [
+                    "toggle"
+                ],
                 "restriction": false
             },
             "/proxy": {
                 "file": "proxy",
-                "scripts": ["variables", "confContext"],
+                "scripts": [
+                    "variables",
+                    "confContext"
+                ],
                 "settings": {
+                    "type": "handlebars",
                     "stylesheets": [],
-                    "scripts": ["reloadUtil.js"],
+                    "scripts": [
+                        "reloadUtil.js"
+                    ],
                     "widgets": [],
                     "loadbootstrap": true
                 },
                 "restriction": false
             },
-            // "/proxy/*/toggle": {
-            //     "file": null,
-            //     "scripts": ["toggle"],
-            //     "restriction": false
-            // },
-            "/proxy/*": {
+            "/proxy/*": { // this needs to be updated to use parameters
+                // "/proxy/:id(\\d+|new)": {
                 "file": "proxyEdit",
                 // variables: add package values
                 // confContext: add config values
                 // urlContext: add url parsed params
                 // noDetails: redirect from any/<int> back to the overview
-                "scripts": ["variables", "confContext", "urlContext", "noDetails"],
+                "scripts": [
+                    "variables",
+                    "confContext",
+                    "urlContext",
+                    "noDetails"
+                ],
                 "settings": {
+                    "type": "handlebars",
                     "stylesheets": [],
-                    "scripts": [],
+                    "scripts": [
+                        "specials.js"
+                    ],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/redirects/": {
+                "file": "redirects",
+                "scripts": [
+                    "variables",
+                    "confContext"
+                ],
+                "settings": {
+                    "type": "handlebars",
+                    "stylesheets": [],
+                    "scripts": [
+                        "reloadUtil.js"
+                    ],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
+                "restriction": false
+            },
+            "/redirects/*": {
+                "file": "redirectEdit",
+                "scripts": [
+                    "variables",
+                    "confContext",
+                    "urlContext",
+                    "noDetails"
+                ],
+                "settings": {
+                    "type": "handlebars",
+                    "stylesheets": [],
+                    "scripts": [
+                        "specials.js"
+                    ],
                     "widgets": [],
                     "loadbootstrap": true
                 },
@@ -74,10 +129,16 @@
             },
             "/stub": {
                 "file": "stubs",
-                "scripts": ["variables", "confContext"],
+                "scripts": [
+                    "variables",
+                    "confContext"
+                ],
                 "settings": {
+                    "type": "handlebars",
                     "stylesheets": [],
-                    "scripts": ["reloadUtil.js"],
+                    "scripts": [
+                        "reloadUtil.js"
+                    ],
                     "widgets": [],
                     "loadbootstrap": true
                 },
@@ -90,10 +151,17 @@
             // },
             "/stub/*": {
                 "file": "stubEdit",
-                "scripts": ["variables", "confContext", "urlContext", "noDetails"],
+                "scripts": [
+                    "variables",
+                    "confContext",
+                    "urlContext",
+                    "noDetails"
+                ],
                 "settings": {
                     "stylesheets": [],
-                    "scripts": [],
+                    "scripts": [
+                        "specials.js"
+                    ],
                     "widgets": [],
                     "loadbootstrap": true
                 },
@@ -101,7 +169,10 @@
             },
             "/acme": {
                 "file": "acme",
-                "scripts": ["variables", "confContext"],
+                "scripts": [
+                    "variables",
+                    "confContext"
+                ],
                 "settings": {
                     "type": "handlebars",
                     "stylesheets": [],
@@ -113,7 +184,12 @@
             },
             "/acme/*": {
                 "file": "acmeEdit",
-                "scripts": ["variables", "confContext", "urlContext", "noDetails"],
+                "scripts": [
+                    "variables",
+                    "confContext",
+                    "urlContext",
+                    "noDetails"
+                ],
                 "settings": {
                     "type": "handlebars",
                     "stylesheets": [],
@@ -125,7 +201,21 @@
             },
             "/config": {
                 "file": null,
-                "scripts": ["config"],
+                "scripts": [
+                    "config"
+                ],
+                "restriction": false
+            },
+            "/config/edit": {
+                "file": "configEdit",
+                "scripts": ["variables"],
+                "settings": {
+                    "type": "handlebars",
+                    "stylesheets": [],
+                    "scripts": [],
+                    "widgets": [],
+                    "loadbootstrap": true
+                },
                 "restriction": false
             },
             // "/admin": {
@@ -149,27 +239,44 @@
         "post": {
             "/acme/:id(\\d+|new)": {
                 "file": null,
-                "scripts": ["updateCert"],
+                "scripts": [
+                    "updateCert"
+                ],
                 "restriction": false
             },
             "/:type(*)/:id(\\d+)/delete": {
                 "file": null,
-                "scripts": ["delete"],
+                "scripts": [
+                    "delete"
+                ],
                 "restriction": false
             },
             "/:type(*)/:id(\\d+|new)": {
                 "file": null,
-                "scripts": ["update"],
+                "scripts": [
+                    "update"
+                ],
                 "restriction": false
             },
             "/config/apply": {
                 "file": null,
-                "scripts": ["restartProxy"],
+                "scripts": [
+                    "restartProxy"
+                ],
                 "restriction": false
             },
             "/acme": {
                 "file": null,
-                "scripts": ["acme"],
+                "scripts": [
+                    "acme"
+                ],
+                "restriction": false
+            },
+            "/config/edit": {
+                "file": null,
+                "scripts": [
+                    "configParse"
+                ],
                 "restriction": false
             },
             // "/register": {
@@ -196,7 +303,7 @@
         {
             "name": "Redirect-Hosts",
             "url": "/redirects",
-            "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+            // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         {
             "name": "Port-Forwards",
@@ -214,15 +321,20 @@
             // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         {
-            "name": "Configuration",
-            "url": "/config",
-            // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
-        },
-        {
-            "name": "Settings",
-            "url": "/settings",
+            "name": "Certificate Manager",
+            "url": "/certificates",
             "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
+        {
+            "name": "Configuration",
+            "url": "/config/edit",
+            // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        },
+        // {
+        //     "name": "Settings",
+        //     "url": "/settings",
+        //     "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
+        // },
         {
             "name": "Admin Page",
             "url": "/admin",
@@ -241,12 +353,21 @@
         "title": "NPM Management Console", // tab title
         "headerTitle": "Management Console", // title in navbar
         // base_* are the default stylesheets and scripts (client side) to load on every page
-        "base_stylesheets": ["bootstrap-legacy.css", "bootstrap.css", "custom.css"],
+        "base_stylesheets": [
+            "bootstrap-legacy.css",
+            "bootstrap.css",
+            "custom.css",
+            "../fontawesome-free-6.7.2-web/css/all.css"
+        ],
         "base_scripts": [],
+        // following scripts are backend scripts to load on every page
+        "scripts": [
+            "headerContext"
+        ],
         "loadbootstrap": true,
-        "widgets": [], // not implemented in this version
+        "widgets": [], // not implemented in this version, deprecated
         "username": "Mr. Anonymous",
-        "default_language": "en", // cannot be changed yet
-        "timezone": "local" // cannot be changed yet
+        "default_language": "en", // cannot be changed in this version
+        "timezone": "local" // cannot be changed in this version
     }
 }

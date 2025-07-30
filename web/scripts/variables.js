@@ -15,11 +15,13 @@ export default async (page, { req, res, next }, config) => {
         pkgFullName: packageJson.fullname,
         pkgVersion: packageJson.version,
         pkgAuthor: packageJson.author,
-        proxyCount: config.proxy.length,
+        proxyCount: config.proxy.filter(p => !p.redirect).length,
+        redirectCount: config.proxy.filter(p => p.redirect).length,
         stubCount: config.stub.length,
         certCount: config.acme.domains.length,
         certCount2: totalDomains,
         ports: config.ports,
-        username: req.auth.user
+        username: req.auth.user,
+        config: JSON.stringify(config, null, 4),
     };
 }

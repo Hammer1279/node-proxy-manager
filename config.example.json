@@ -15,7 +15,7 @@
     ],
     "timeout": 30000,
     "_unconfiguredCloseNoResponse": "If enabled, the server will instantly close the connection instead of responding with 421 Misdirected Request",
-    "unconfiguredCloseNoResponse": true,
+    "unconfiguredCloseNoResponse": false,
     "_cleanAuthFile": "If enabled, the auth file is purged, this file is to store auth tokens for the management interface",
     "cleanAuthFile": true,
     "_initialSync": "refuse all non acme related requests to allow initializing all certificates",
@@ -23,19 +23,17 @@
     "_maintenance": "if enabled, all requests to the reverse proxy will be blocked and a 503 Service Unavailable will be returned",
     "maintenance": false,
     "_trustedProxies": "trusted proxies are used to identify the real client IP address, if you are behind a reverse proxy, you need to add the IP address of the reverse proxy here",
-    "trustedProxies": [],
+    "trustedProxies": [
+        "1.2.3.4"
+    ],
     "management": {
-        "_note": "Management interface is not yet implemented, it will include a web interface similar to Nginx Proxy Manager (hopefully)",
         "enabled": true,
         "port": 81,
         "accounts": {
             "admin": "admin"
         },
-        "_logging": "if enabled, the management interface will log all requests to the log file",
         "logging": false,
         "logFile": "logs/server.log",
-        "_trustedProxies": "deprecated, use top level trustedProxies instead, this WILL get removed",
-        "trustedProxies": [],
         "ratelimit": {
             "enabled": true,
             "maxAuthRequests": 3,
@@ -47,15 +45,28 @@
     },
     "fallback": {
         "_note": "emergency fallback server for different services, if disabled, the process will just be killed",
-        "disable": false,
-        "auth": {
-            "username": "admin",
-            "password": "admin"
-        }
+        "disable": true,
+        "_note2": "this seems very buggy, only activate if really needed, I'm considering removing this in the future",
+        "admin_api": {
+            "_note": "not implemented yet",
+            "port": 1337,
+            "auth": [
+                {
+                    "username": "admin",
+                    "password": "admin"
+                }
+            ]
+        },
+        "auth": [
+            {
+                "username": "admin",
+                "password": "admin"
+            }
+        ]
     },
     "testserver": {
         "_note": "This is a test server, it will respond with a 200 OK, if enabled",
-        "enabled": true,
+        "enabled": false,
         "websocket": true,
         "_fail": "if enabled, the test server will not respond causing a timeout",
         "fail": false,
@@ -63,7 +74,7 @@
     },
     "acme": {
         "_note": "this client does not seem too reliable, use certbot or acme.sh instead if possible",
-        "enabled": false,
+        "enabled": true,
         "_terms": "From the directory link, you will find the terms of service, you need to agree to them before using the acme client",
         "agreeToTerms": false,
         "directoryUrl": "https://acme-v02.api.letsencrypt.org/directory",
@@ -95,7 +106,8 @@
             "host": [
                 "localhost"
             ],
-            "enabled": true,
+            "enabled": false,
+            "special": true,
             "target": "http://localhost:8080",
             "ssl": {
                 "key": "certs/localhost/server.key",
@@ -114,11 +126,11 @@
                 "X-Custom-Header": "customValue"
             },
             "auth": {
-                "_note": "this is a placeholder, not yet implemented and subject to change",
-                "enabled": false,
+                "enabled": true,
                 "username": "admin",
                 "password": "admin"
-            }
+            },
+            "write_protected": true
         },
         {
             "description": "",
@@ -153,11 +165,32 @@
                 "invalid.host",
                 "external-direct-ip"
             ],
-            "enabled": false,
+            "enabled": true,
             "special": true,
             "status": 404,
             "message": "Not Found",
+            "contentType": "text/plain",
             "secure": true,
+            "ssl": {
+                "key": "certs/localhost",
+                "cert": "certs/localhost/server.crt",
+                "ca": [
+                    "certs/localhost/rootCA.crt"
+                ]
+            },
+            "write_protected": true
+        },
+        {
+            "_note": "This is the response config for any requests not yet specified, do not remove this",
+            "host": [
+                "default"
+            ],
+            "enabled": true,
+            "special": true,
+            "status": 200,
+            "message": "<h1>Success!</h1>Welcome to the Node Proxy Manager!",
+            "contentType": "text/html",
+            "secure": false,
             "ssl": {
                 "key": "certs/localhost",
                 "cert": "certs/localhost/server.crt",

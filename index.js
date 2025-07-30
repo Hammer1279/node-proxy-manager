@@ -35,6 +35,10 @@ if (existsSync(join(process.cwd(), 'auth.json')) && config.cleanAuthFile) {
     unlink(join(process.cwd(), 'auth.json')); // Remove old auth file
 }
 
+export let killACME = () => {
+    throw new Error("ACME not initialized");
+}
+
 if (config.acme.enabled) {
     let acmeFork = fork('./acme.js');
 
@@ -45,7 +49,7 @@ if (config.acme.enabled) {
 
     let lastAcmeReload = Date.now();
 
-    setInterval(() => {
+    const updater = setInterval(() => {
         const now = Date.now();
         const daysSinceLastReload = (now - lastAcmeReload) / (24 * 60 * 60 * 1000);
 
@@ -54,6 +58,11 @@ if (config.acme.enabled) {
             lastAcmeReload = now;
         }
     }, 60 * 60 * 1000); // Check every hour
+
+    killACME = () => {
+        clearInterval(updater);
+        acmeFork.kill();
+    };
 
     acmeFork.on("exit", (code) => {
         console.log(`ACME server exited with code ${code}`);
@@ -92,6 +101,9 @@ export const reloadProxy = () => {
 export let reloadWebServer = () => {
     throw new Error("Web server not initialized");
 }
+export let killWebServer = () => {
+    throw new Error("Web server not initialized");
+}
 
 if (config.management.enabled) {
     let webServerFork = fork("./web/server.js");
@@ -110,6 +122,9 @@ if (config.management.enabled) {
         webServerFork.kill();
         webServerFork = fork("./web/server.js");
     }
+    killWebServer = () => {
+        webServerFork.kill();
+    };
 }
 
 // Test server
@@ -190,4 +205,38 @@ if (config.testserver.enabled) {
             });
         }
     }
+}
+
+// Handle SIGINT (Ctrl+C) to gracefully shut down all child processes
+process.on('SIGINT', () => {
+    console.log('\nReceived SIGINT signal. Shutting down all processes...');
+    shutdown(0);
+});
+
+// Set up global error handlers outside SIGINT to catch errors anytime
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    return shutdown(1, error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Promise Rejection:', reason);
+    return shutdown(1);
+});
+
+// Helper function to ensure all processes are terminated before exiting
+function shutdown(exitCode, error) {
+    console.log('Shutting down processes...');
+    try {
+        killACME();
+    } catch (error) {
+        console.error("Error killing ACME process:", error);
+    }
+    try {
+        killWebServer();
+    } catch (error) {
+        console.error("Error killing web server process:", error);
+    }
+    console.error(error);
+    process.exit(exitCode);
 }

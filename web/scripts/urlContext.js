@@ -5,7 +5,10 @@ import { join } from 'path';
 export default async (page, { req, res, next }, config) => {
     const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
     const urlParts = req.url.split('/');
-    const prefix = urlParts[1];
+    let prefix = urlParts[1];
+    if (prefix == "redirects") {
+        prefix = "proxy";
+    }
     const postfix = urlParts[3];
     const id = parseInt(urlParts[2]);
     const rv = {
@@ -19,7 +22,12 @@ export default async (page, { req, res, next }, config) => {
         res.end('Invalid URL format');
         return;
     } else if (urlParts[2] !== "new") {
-        const item = runtimeConfig[prefix][id];
+        const item = runtimeConfig?.[prefix]?.[id] ?? null;
+        if (!item) {
+            res.writeHead(500);
+            res.end("Error loading item");
+            return;
+        }
         rv.item = item;
     } else {
         rv.item = {};

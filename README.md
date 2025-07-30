@@ -30,7 +30,7 @@ To update it without many issues:
 5. check for any new config entry that might need to be updated
 
 **Since 0.3.4, migrations are handled seperate from git.\
-On first migration, if the stash is not used, the file will be PERMANENTLY deleted.**
+On first migration since 0.3.4, BACK UP YOUR `config.json` file by copying it with a different name, there is a high chance it gets deleted otherwise!**
 
 
 ### Autostart using PM2 (Linux/MacOS only I believe)

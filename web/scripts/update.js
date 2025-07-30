@@ -14,8 +14,13 @@ export default async (page, { req, res, next }, config) => {
     // const itemId = urlParts[urlParts.length - 1];
     // const type = urlParts[urlParts.length - 2];
     const itemId = req.params.id;
-    const type = req.params.type;
-    console.debug("Updating", type, itemId);
+    let storageType = req.params.type;
+    let redirectType = req.params.type;
+    if (storageType === "redirects") {
+        storageType = "proxy";
+        redirectType = "redirects";
+    }
+    console.debug("Updating", storageType, itemId);
     if (itemId != "new") {
         const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
         const id = parseInt(itemId);
@@ -24,10 +29,20 @@ export default async (page, { req, res, next }, config) => {
             res.end();
             return { done: true };
         }
-        const item = runtimeConfig[type][id];
+        const item = runtimeConfig[storageType][id];
         if (!item) {
             res.sendStatus(404);
             res.end();
+            return { done: true };
+        }
+        if (item?.write_protected) {
+            res.writeHead(403, { "Content-Type": "text/plain" });
+            res.end("This item is write protected");
+            return { done: true };
+        }
+        if (item?.special && item?.host != req?.body?.host) {
+            res.writeHead(403, { "Content-Type": "text/plain" });
+            res.end("Cannot change host of system rules!");
             return { done: true };
         }
         for (const param in req.body) {
@@ -56,6 +71,14 @@ export default async (page, { req, res, next }, config) => {
                         const ca = caRaw.split(',');
                         item[param] = { key, cert, ca };
                         continue;
+                    } else if (param == "auth") {
+                        const { enabled, type, username, password, realm } = element;
+                        item[param].enabled = enabled && (enabled[enabled.length - 1] === "true" || enabled[enabled.length - 1] === "on");
+                        item[param].username = username || "";
+                        item[param].password = password || "";
+                        // item[param].realm = realm || ""; // for future use, currently not used
+                        // item[param].type = type || "basic"; // default to basic auth
+                        continue;
                     } else if (element.split(',')[0] === '') {
                         item[param] = [];
                         continue;
@@ -71,11 +94,11 @@ export default async (page, { req, res, next }, config) => {
         }
         await writeFile(join(".", 'config.json'), JSON.stringify(runtimeConfig, null, 4), 'utf-8');
     } else {
-        if (type == "proxy") {
+        if (storageType == "proxy") {
             const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
-            
+
             // default proxy item
-            let item = {
+            let defaultItem = {
                 "description": "",
                 "host": [],
                 "enabled": false,
@@ -96,39 +119,52 @@ export default async (page, { req, res, next }, config) => {
                     "enabled": false,
                     "username": "",
                     "password": ""
-                }
+                },
+                "write_protected": false,
             };
 
-            // parse request body into item
+            // Deep clone defaultItem for the new item
+            let item = JSON.parse(JSON.stringify(defaultItem));
+
+            // parse request body into item, using types from defaultItem
             for (const [key, value] of Object.entries(req.body)) {
-                if (key === 'host') {
-                    item[key] = value.split(',');
-                } else if (key === 'timeout') {
-                    item[key] = parseInt(value);
-                } else if (key === 'ssl') {
-                    item.ssl.key = value.key || item.ssl.key;
-                    item.ssl.cert = value.cert || item.ssl.cert;
-                    item.ssl.ca = value.ca ? value.ca.split(',') : item.ssl.ca;
-                } else if (key === 'auth') {
-                    item.auth.enabled = value.enabled[value.enabled.length - 1] === "true" || value.enabled[value.enabled.length - 1] === "on";
-                    item.auth.username = value.username || item.auth.username;
-                    item.auth.password = value.password || item.auth.password;
-                } else if (typeof value === 'object') {
-                    // Handle boolean values that come as arrays
-                    item[key] = value[value.length - 1] === "true" || value[value.length - 1] === "on";
-                } else {
-                    item[key] = value;
+                if (key in defaultItem) {
+                    const defVal = defaultItem[key];
+                    if (typeof defVal === "boolean") {
+                        // Convert "on"/"true" to true, else false
+                        if (typeof value === "object") {
+                            item[key] = value[value.length - 1] === "true" || value[value.length - 1] === "on";
+                        } else {
+                            item[key] = value === "true" || value === "on";
+                        }
+                    } else if (typeof defVal === "number") {
+                        item[key] = parseInt(value);
+                    } else if (Array.isArray(defVal)) {
+                        item[key] = Array.isArray(value) ? value : value.split(',');
+                    } else if (typeof defVal === "object" && key === "ssl") {
+                        item.ssl.key = value.key || "";
+                        item.ssl.cert = value.cert || "";
+                        item.ssl.ca = value?.ca?.split(',') ?? [];
+                    } else if (typeof defVal === "object" && key === "auth") {
+                        item.auth.enabled = value.enabled && (value.enabled[value.enabled.length - 1] === "true" || value.enabled[value.enabled.length - 1] === "on");
+                        item.auth.username = value.username || "";
+                        item.auth.password = value.password || "";
+                    } else {
+                        item[key] = value;
+                    }
                 }
             }
 
-            runtimeConfig[type].push(item);
+            runtimeConfig[storageType].push(item);
             await writeFile(join(".", 'config.json'), JSON.stringify(runtimeConfig, null, 4), 'utf-8');
-        } else if (type == "stub") {
+            res.redirect(`/${redirectType}`);
+            return { done: true };
+        } else if (storageType == "stub") {
             const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
             
             // TODO: rework stub like proxy if it works
             const item = req.body;
-            runtimeConfig[type].push({
+            runtimeConfig[storageType].push({
                 "description": item.description,
                 "host": item.host.split(','),
                 "enabled": item.enabled[item.enabled.length - 1] === "true" || item.enabled[item.enabled.length - 1] == "on",
@@ -143,14 +179,14 @@ export default async (page, { req, res, next }, config) => {
             });
             await writeFile(join(".", 'config.json'), JSON.stringify(runtimeConfig, null, 4), 'utf-8');
         } else {
-            console.error(`Type "${type}" not implemented`);
+            console.error(`Type "${storageType}" not implemented`);
             res.writeHead(503, { 'Content-Type': 'text/plain' });
             res.end('Not implemented yet');
             return { done: true };
         }
-        res.redirect(`/${type}`);
+        res.redirect(`/${redirectType}`);
         return { done: true };
     }
-    res.status(200).redirect(`/${type}`);
+    res.status(200).redirect(`/${redirectType}`);
     return { done: true };
 }

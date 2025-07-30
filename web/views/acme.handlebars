@@ -16,8 +16,8 @@
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="autodetect" {{#if autodetect}}checked{{/if}}
-                            id="autodetectCheck" disabled>
+                        <input class="form-check-input" type="checkbox" name="autodetect" {{#if
+                            autodetect}}checked{{/if}} id="autodetectCheck" disabled>
                         <label class="form-check-label" for="autodetectCheck">
                             Automatically manage certificates for all configured domains. (coming soon)
                         </label>
@@ -76,13 +76,13 @@
                     <br>
                     Paths:<br>
                     - Key: "certs/acme/live/{{certificate}}/privkey.pem"
-                    <button class="btn btn-sm btn-info copy-btn"
+                    <button class="btn btn-sm btn-info copy-btn" style="display: none;"
                         data-copy="certs/acme/live/{{certificate}}/privkey.pem">Copy</button><br>
                     - Cert: "certs/acme/live/{{certificate}}/fullchain.pem"
-                    <button class="btn btn-sm btn-info copy-btn"
+                    <button class="btn btn-sm btn-info copy-btn" style="display: none;"
                         data-copy="certs/acme/live/{{certificate}}/fullchain.pem">Copy</button><br>
                     - Chain/CA: "certs/acme/live/{{certificate}}/chain.pem"
-                    <button class="btn btn-sm btn-info copy-btn"
+                    <button class="btn btn-sm btn-info copy-btn" style="display: none;"
                         data-copy="certs/acme/live/{{certificate}}/chain.pem">Copy</button>
                 </p>
                 <a href="/acme/{{@index}}/edit" class="btn btn-primary">Edit</a>
@@ -110,16 +110,61 @@
     document.addEventListener('DOMContentLoaded', () => {
         const copyButtons = document.querySelectorAll('.copy-btn');
         copyButtons.forEach(button => {
-            button.addEventListener('click', (event) => {
-                const textToCopy = button.getAttribute('data-copy');
-                navigator.clipboard.writeText(textToCopy)
-                    .then(() => {
-                        // alert(`Copied to clipboard: ${textToCopy}`);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy text: ', err);
-                    });
-            });
+            button.style.display = "inline-block"; // Ensure buttons are visible
+            if (window.isSecureContext && navigator.clipboard && false) {
+                button.addEventListener('click', (event) => {
+                    const textToCopy = button.getAttribute('data-copy');
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => {
+                            // alert(`Copied to clipboard: ${textToCopy}`);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                        });
+                });
+            } else {
+                button.style.display = 'none'; // Hide the copy buttons when not in secure context
+                // Make the previous sibling (the path text) clickable to select text
+                const prev = button.previousSibling;
+                if (prev && prev.nodeType === Node.TEXT_NODE) {
+                    // Extract the quoted path from the text node
+                    const match = prev.textContent.match(/"([^"]+)"/);
+                    if (match) {
+                        // Create opening quote
+                        const openQuote = document.createElement('span');
+                        openQuote.textContent = '"';
+                        openQuote.style.userSelect = 'none';
+
+                        // Create the selectable span for holding the path
+                        const span = document.createElement('span');
+                        span.textContent = match[1];
+                        span.style.cursor = 'pointer';
+                        span.title = 'Click to select path for copying';
+
+                        // Create closing quote
+                        const closeQuote = document.createElement('span');
+                        closeQuote.textContent = '"';
+                        closeQuote.style.userSelect = 'none';
+
+                        // Insert the elements in order
+                        prev.parentNode.insertBefore(openQuote, button);
+                        prev.parentNode.insertBefore(span, button);
+                        prev.parentNode.insertBefore(closeQuote, button);
+
+                        // Remove the quoted path from the original text node
+                        prev.textContent = prev.textContent.replace(/"([^"]+)"/, '');
+
+                        span.addEventListener('click', () => {
+                            const range = document.createRange();
+                            range.selectNodeContents(span);
+                            const sel = window.getSelection();
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        });
+                    }
+                }
+                console.log('Copy functionality is not available in non-secure contexts');
+            }
         });
     });
 </script>
