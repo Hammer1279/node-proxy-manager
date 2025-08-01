@@ -15,6 +15,11 @@ import Greenlock from "greenlock";
 import http01Lib from "acme-http-01-standalone";
 const http01 = http01Lib.create({});
 
+import { fork } from 'child_process';
+import handleCrash from './crashhandler.js';
+import { getCertificate } from './CertManager.js';
+import { ipcServer } from './ipc.js';
+
 // import config from './config.json' with {
 //     type: "json"
 // };
@@ -27,9 +32,7 @@ const config = (await import('./config.json', {
     with: { type: "json" }
 })).default;
 
-import { fork } from 'child_process';
-import handleCrash from './crashhandler.js';
-import { getCertificate } from './CertManager.js';
+const ipc = ipcServer(config);
 
 if (existsSync(join(process.cwd(), 'auth.json')) && config.cleanAuthFile) {
     unlink(join(process.cwd(), 'auth.json')); // Remove old auth file
@@ -78,6 +81,7 @@ let proxyFork = fork('./proxy.js');
 
 proxyFork.on("exit", (code) => {
     console.log(`Proxy server exited with code ${code}`);
+    ipc.emit("stop");
     handleCrash("proxy", code);
 });
 
@@ -109,6 +113,7 @@ if (config.management.enabled) {
     let webServerFork = fork("./web/server.js");
     webServerFork.on("exit", (code) => {
         console.log(`Web server exited with code ${code}`);
+        ipc.emit("stop");
         handleCrash("management", code);
     });
     webServerFork.on("message", (message) => {
@@ -227,6 +232,8 @@ process.on('unhandledRejection', (reason, promise) => {
 // Helper function to ensure all processes are terminated before exiting
 function shutdown(exitCode, error) {
     console.log('Shutting down processes...');
+    ipc.emit("stop");
+    // rest is superseded by ipc stop, but kept for safety
     try {
         killACME();
     } catch (error) {

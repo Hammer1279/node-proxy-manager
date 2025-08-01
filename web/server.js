@@ -16,6 +16,9 @@ import NodeCache from 'node-cache';
 import config from '../config.json' with {
     type: "json"
 };
+import { ipcClient } from '../ipc.js';
+
+const ipc = ipcClient(config, "management");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

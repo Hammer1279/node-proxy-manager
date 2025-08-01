@@ -19,6 +19,7 @@ import { Socket } from 'net';
 import { getCertificate } from './CertManager.js';
 
 import NodeCache from 'node-cache';
+import { ipcClient } from './ipc.js';
 
 const cache = new NodeCache({
     stdTTL: 43200, // 12 hours
@@ -35,6 +36,8 @@ setInterval(updateCFCIDRList, 6 * 60 * 60 * 1000); // refresh cache every 6 hour
 
 // always use in memory config for best performance (no disk IO)
 let config = initialConfig;
+
+const ipc = ipcClient(config, "proxy");
 
 async function reloadConfig(reqBody) {
     try {
@@ -83,7 +86,7 @@ export function getSecureContext(domain) {
     }
 }
 
-const proxy = createProxyServer({
+export const proxy = createProxyServer({
     secure: false, // Allow self-signed certificates,
     ws: true, // Enable WebSocket support
     xfwd: true, // Enable X-Forwarded-For header
@@ -314,7 +317,7 @@ const webRequest = (req, res) => {
     // } else 
 
     if (domConfStub) {
-        res.writeHead(domConfStub.status || 200, domConfStub.headers || { "Content-Type": domConfStub?.contentType ?? "text/plain" });
+        res.writeHead(domConfStub.status || 200, domConfStub.headers || { "Content-Type": domConfStub?.contentType ?? "text/plain", ...(domConfStub?.headers ?? {}) });
         res.end(domConfStub.message || 'OK');
         return;
     } else if (domConfProxy?.maintenance) {
@@ -330,7 +333,7 @@ const webRequest = (req, res) => {
         res.end();
         return
     } else if (domConfProxy?.redirect) {
-        res.writeHead(domConfProxy.redirectTemp ? 302 : 301, { 'Location': domConfProxy.target });
+        res.writeHead(domConfProxy.redirectTemp ? 302 : 301, { 'Location': domConfProxy.target, ...(domConfProxy?.headers ?? {}) });
         res.end();
         return;
     } else {
@@ -360,7 +363,7 @@ const webRequest = (req, res) => {
         // calculate x-forwarded-for header
         let ip = "0.0.0.0/0";
         const formattedIp = req.socket.remoteAddress.replace("::ffff:", ""); // remove IPv6 prefix if present
-        console.log("Request Headers:", req.headers);
+        // console.log("Request Headers:", req.headers);
         if ("cf-connecting-ip" in req.headers) {
             const cfcidrList = cache.get("cfcidrList");
             console.log(cfcidrList);
@@ -391,7 +394,7 @@ const webRequest = (req, res) => {
 
         }
 
-        return proxy.web(req, res, {
+        const proxyOptions = {
             target: domConfProxy.target,
             xfwd: true,
             ws: domConfProxy.websocket,
@@ -404,7 +407,23 @@ const webRequest = (req, res) => {
                 "X-Real-Ip": ip,
                 ...domConfProxy.headers,
             }
-        });
+        }
+
+        if (config.anubis?.enabled && (config.anubis?.alwaysOn || domConfProxy?.anubis)) {
+            import('./anubis.js').then(({ anubisBindPort }) => {
+                return proxy.web(req, res, {
+                    target: `http://localhost:${anubisBindPort}/`,
+                    headers: {
+                        "X-Real-Ip": ip,
+                        "X-NPM-Request": Buffer.from(JSON.stringify(proxyOptions)).toString('base64')
+                    },
+                    ws: domConfProxy.websocket,
+                    websocket: domConfProxy.websocket,
+                });
+            });
+        } else {
+            return proxy.web(req, res, proxyOptions);
+        }
     }
 }
 
