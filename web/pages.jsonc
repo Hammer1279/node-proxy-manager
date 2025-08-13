@@ -206,6 +206,7 @@
                 ],
                 "restriction": false
             },
+            // serve the top if accept is json, if its html, serve the bottom under /config
             "/config/edit": {
                 "file": "configEdit",
                 "scripts": ["variables"],
@@ -327,7 +328,7 @@
         },
         {
             "name": "Configuration",
-            "url": "/config/edit",
+            "url": "/config",
             // "style": "pointer-events: none; cursor: default; color: gray; text-decoration: none; opacity: 0.6;"
         },
         // {

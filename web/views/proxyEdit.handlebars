@@ -40,7 +40,7 @@
 
         <div class="mb-3 form-check">
             <input type="hidden" name="secure" value="off">
-            <input type="checkbox" class="form-check-input" id="secure" name="secure" {{#if item.secure}}checked{{/if}}>
+            <input type="checkbox" class="form-check-input" id="secure" name="secure" {{#if item.secure}}checked{{/if}} {{#if item.ssl.bypass}}disabled{{/if}}>
             <label class="form-check-label" for="secure">Force TLS/SSL (HTTPS)</label>
         </div>
 
@@ -48,24 +48,24 @@
             <h4>SSL Configuration</h4>
             <div class="mb-3">
                 <label for="sslKey" class="form-label">SSL Key Path</label>
-                <input type="text" class="form-control" id="sslKey" name="ssl[key]" value="{{item.ssl.key}}">
+                <input type="text" class="form-control" id="sslKey" name="ssl[key]" value="{{item.ssl.key}}" {{#if item.ssl.bypass}}disabled{{/if}}>
             </div>
 
             <div class="mb-3">
                 <label for="sslCert" class="form-label">SSL Certificate Path</label>
-                <input type="text" class="form-control" id="sslCert" name="ssl[cert]" value="{{item.ssl.cert}}">
+                <input type="text" class="form-control" id="sslCert" name="ssl[cert]" value="{{item.ssl.cert}}" {{#if item.ssl.bypass}}disabled{{/if}}>
             </div>
 
             <div class="mb-3">
                 <label for="sslCa" class="form-label">SSL CA Path (comma separated)</label>
-                <textarea class="form-control" id="sslCa" name="ssl[ca]" rows="2">{{item.ssl.ca}}</textarea>
+                <textarea class="form-control" id="sslCa" name="ssl[ca]" rows="2" {{#if item.ssl.bypass}}disabled{{/if}}>{{item.ssl.ca}}</textarea>
             </div>
         </div>
 
 
         <div class="mb-3 form-check">
-            <input type="hidden" name="auth" value="off">
-            <input type="checkbox" class="form-check-input" id="auth" name="auth[enabled]" {{#if item.auth}}checked{{/if}}>
+            {{!-- <input type="hidden" name="auth" value="off"> --}}
+            <input type="checkbox" class="form-check-input" id="auth" name="auth[enabled]" {{#if item.auth.enabled}}checked{{/if}}>
             <label class="form-check-label" for="auth">Enable Authentication</label>
         </div>
 

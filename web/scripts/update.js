@@ -73,7 +73,7 @@ export default async (page, { req, res, next }, config) => {
                         continue;
                     } else if (param == "auth") {
                         const { enabled, type, username, password, realm } = element;
-                        item[param].enabled = enabled && (enabled[enabled.length - 1] === "true" || enabled[enabled.length - 1] === "on");
+                        item[param].enabled = enabled && (enabled === "true" || enabled === "on");
                         item[param].username = username || "";
                         item[param].password = password || "";
                         // item[param].realm = realm || ""; // for future use, currently not used
@@ -146,7 +146,7 @@ export default async (page, { req, res, next }, config) => {
                         item.ssl.cert = value.cert || "";
                         item.ssl.ca = value?.ca?.split(',') ?? [];
                     } else if (typeof defVal === "object" && key === "auth") {
-                        item.auth.enabled = value.enabled && (value.enabled[value.enabled.length - 1] === "true" || value.enabled[value.enabled.length - 1] === "on");
+                        item.auth.enabled = value.enabled && (value.enabled === "true" || value.enabled === "on") || item.enabled;
                         item.auth.username = value.username || "";
                         item.auth.password = value.password || "";
                     } else {

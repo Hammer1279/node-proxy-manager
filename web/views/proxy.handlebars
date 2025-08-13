@@ -1,8 +1,14 @@
+<style>
+    .text-yellow {
+        color: var(--bs-yellow); /* Using Bootstrap's yellow variable */
+    }
+</style>
+
 <h1 class="text-center">Proxies</h1>
 <p>Note: Stubs take precedence over Proxies. If a Stub is configured and enabled for a domain, the Proxy will not be used.</p>
 <div class="row">
     <div class="col">
-    <a href="/proxy/new" class="btn btn-primary disabled" disabled>New Proxy</a>
+    <a href="/proxy/new" class="btn btn-primary">New Proxy</a>
     <a href="#" onclick="applyConfig(event)" class="btn btn-info">Apply Config</a>
     <p class="spacer"></p>
     {{#each proxies}}
@@ -45,7 +51,7 @@
                 {{!-- Redirect Only Mode: {{#if redirect}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
                 Temporary Redirect: {{#if redirectTemp}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br> --}}
                 Timeout: <b>{{timeout}}ms</b><br>
-                HTTPS: {{#if secure}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
+                HTTPS: {{#if acmebypass}}<i class="fa-solid fa-square-minus text-yellow"></i> (ACME Bypassed){{else}}{{#if secure}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}{{/if}}<br>
                 Auth Required: {{#if auth.enabled}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
                 Custom Headers: {{#if headers}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
                 </p>

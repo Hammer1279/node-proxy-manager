@@ -21,6 +21,7 @@ export default async (page, { req, res, next }, config) => {
     return {
         proxies: proxyWithIds.filter(values => !values.redirect).map(values => ({
             ...values,
+            acmebypass: values.ssl?.bypass ?? false,
         })),
         redirects: proxyWithIds.filter(values => values.redirect).map(values => ({
             ...values,

@@ -111,7 +111,7 @@
         const copyButtons = document.querySelectorAll('.copy-btn');
         copyButtons.forEach(button => {
             button.style.display = "inline-block"; // Ensure buttons are visible
-            if (window.isSecureContext && navigator.clipboard && false) {
+            if (window.isSecureContext && navigator.clipboard) {
                 button.addEventListener('click', (event) => {
                     const textToCopy = button.getAttribute('data-copy');
                     navigator.clipboard.writeText(textToCopy)

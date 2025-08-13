@@ -17,23 +17,25 @@ export const ipcServer = function (config) {
     const ipc = createServer((socket) => {
         processes.add(socket);
         socket.on('data', (data) => {
-            console.log('MAIN: IPC data received:', data.toString());
+            // console.debug('MAIN: IPC data received:', data.toString());
             if (data.length == 2) { // control code
                 if (data[0] === 0xDE && data[1] === 0xAD) { // 0xDEAD
                     console.log('MAIN: Received stop command from IPC');
                     ipc.emit("stop");
                 } else {
                     console.log("MAIN: Received code:", data.toString('hex'));
+                    ipc.emit("broadcast", data);
                 }
             } else {
                 console.log(`MAIN: IPC data received:`, data.toString());
+                ipc.emit("broadcastData", data);
             }
-            // Broadcast the data to all other processes
-            processes.forEach(proc => {
-                if (proc !== socket) {
-                    proc.write(data);
-                }
-            });
+            // // Broadcast the data to all other processes
+            // processes.forEach(proc => {
+            //     if (proc !== socket) {
+            //         proc.write(data);
+            //     }
+            // });
         });
         socket.on('close', () => {
             processes.delete(socket);
@@ -48,6 +50,11 @@ export const ipcServer = function (config) {
             // Send only the first 2 bytes of the data (should not be longer for control codes)
             const buf = Buffer.from(data).subarray(0, 2);
             proc.write(buf);
+        });
+    });
+    ipc.on("broadcastData", (data) => {
+        processes.forEach(proc => {
+            proc.write(data);
         });
     });
     ipc.on("stop", () => {
@@ -78,9 +85,20 @@ export const ipcServer = function (config) {
     return ipc;
 }
 
+/**
+ * IPC client for subprocesses
+ * @param {*} config 
+ * @param {*} name 
+ * @returns {import('net').Socket}
+ */
 export const ipcClient = function (config, name = "FIXME") {
     const procName = name.toUpperCase();
     const ipc = connect(config.sock);
+    const _nativeWrite = ipc.write;
+    ipc.write = (data) => {
+        console.log(`${procName}: IPC write:`, data.toString());
+        _nativeWrite.call(ipc, data);
+    }
     ipc.write(Buffer.from(name + " started and listening"));
     ipc.on("data", (data) => {
         if (data.length == 2) { // control code
@@ -95,6 +113,7 @@ export const ipcClient = function (config, name = "FIXME") {
             console.log(`${procName}: IPC data received:`, data.toString());
         }
     });
+    // if IPC is closed, then the subprocess is orphaned as the main process died
     ipc.on("close", () => {
         console.log(`${procName}: IPC connection closed`);
         process.exit(0);
@@ -103,4 +122,5 @@ export const ipcClient = function (config, name = "FIXME") {
         console.error(`${procName}: IPC error:`, err);
         process.exit(1);
     });
+    return ipc;
 };

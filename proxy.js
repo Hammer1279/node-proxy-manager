@@ -28,7 +28,13 @@ const cache = new NodeCache({
 
 async function updateCFCIDRList() {
     if (!cache.has("cfcidrList")) {
-        cache.set("cfcidrList", (await superagent.get("https://api.cloudflare.com/client/v4/ips")).body);
+        try {
+            cache.set("cfcidrList", (await superagent.get("https://api.cloudflare.com/client/v4/ips")).body);
+        } catch (error) {
+            console.error("Error fetching Cloudflare CIDR list:", error);
+            setTimeout(updateCFCIDRList, 60 * 60 * 1000); // Retry after 1 hour
+            return;
+        }
     }
 }
 await updateCFCIDRList();
@@ -38,6 +44,16 @@ setInterval(updateCFCIDRList, 6 * 60 * 60 * 1000); // refresh cache every 6 hour
 let config = initialConfig;
 
 const ipc = ipcClient(config, "proxy");
+let validAuths = [];
+
+ipc.on('data', async (data) => {
+    if (data.at(0) == 0xC0 && data.at(1) == 0xCC) { // 0xC0CC
+        const end = data.subarray(2).findIndex((byte) => byte === 0xC0 && byte === 0xCC);
+        const secret = data.subarray(2, end - 1).toString('utf-8');
+        console.debug("Received new auth secret:", secret);
+        validAuths.push(secret);
+    }
+});
 
 async function reloadConfig(reqBody) {
     try {
@@ -140,7 +156,6 @@ const webRequest = (req, res) => {
             // TODO: remove either ok or status, this seems redundant
             res.end(JSON.stringify({
                 ok: false,
-                status: 'down',
                 reason: 'maintenance',
                 revisionId: config.revisionId || "initial",
             }));
@@ -161,7 +176,6 @@ const webRequest = (req, res) => {
             res.writeHead(503, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 ok: false,
-                status: 'down',
                 reason: 'cert-init',
                 revisionId: config.revisionId || "initial",
             }));
@@ -176,7 +190,6 @@ const webRequest = (req, res) => {
             res.writeHead(418, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 ok: false,
-                status: 'down',
                 reason: 'tea time',
                 revisionId: config.revisionId || "initial",
             }));
@@ -187,7 +200,25 @@ const webRequest = (req, res) => {
         res.writeHead(505, { 'Content-Type': 'text/plain' });
         res.end("This server is set up to only handle HTCPCP/1.0 requests, but can only handle HTTP requests.\r\nPlease contact the server administrator if you think this is a mistake.");
         return;
-    } else if (req.url.includes('/.well-known/acme-challenge')) {
+    }
+
+    const domain = req?.headers?.host?.split(':')[0];
+    let invalidDomain = false;
+    if (!domain) {
+        invalidDomain = "invalid.host";
+    }
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    if (ipv4Regex.test(domain) || ipv6Regex.test(domain)) {
+        invalidDomain = "external-direct-ip";
+    }
+
+    let domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
+    let domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
+    domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain)) ?? domConfProxy;
+    domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain)) ?? domConfStub;
+
+    if (req.url.includes('/.well-known/acme-challenge') && !domConfProxy?.ssl?.bypass) {
         if (config.acme.enabled) {
             handleChallenge(req, res);
         } else {
@@ -201,7 +232,7 @@ const webRequest = (req, res) => {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 ok: true,
-                status: 'up',
+                // status: 'up', // deprecated, use ok + reason instead
                 reason: 'none',
                 revisionId: config.revisionId || "initial",
             }));
@@ -217,8 +248,9 @@ const webRequest = (req, res) => {
             let success = false;
             let auth = Buffer.from(req.headers["authorization"]?.split(" ")[1] || "", "base64").toString();
             if (auth) {
-                const authFile = readFileSync(join(process.cwd(), 'auth.json'), 'utf-8');
-                const validAuths = JSON.parse(authFile);
+                // TODO: replace this file based auth with a ipc based auth to prevent issues with the auth file
+                // const authFile = readFileSync(join(process.cwd(), 'auth.json'), 'utf-8');
+                // const validAuths = JSON.parse(authFile);
                 if (validAuths.includes(auth)) {
 
                     let body = '';
@@ -250,7 +282,7 @@ const webRequest = (req, res) => {
                     const index = validAuths.indexOf(auth);
                     if (index > -1) {
                         validAuths.splice(index, 1);
-                        writeFileSync(join(process.cwd(), 'auth.json'), JSON.stringify(validAuths));
+                        // writeFileSync(join(process.cwd(), 'auth.json'), JSON.stringify(validAuths));
                         return;
                     }
                 }
@@ -264,21 +296,6 @@ const webRequest = (req, res) => {
         }
         return;
     }
-    const domain = req?.headers?.host?.split(':')[0];
-    let invalidDomain = false;
-    if (!domain) {
-        invalidDomain = "invalid.host";
-    }
-    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-    if (ipv4Regex.test(domain) || ipv6Regex.test(domain)) {
-        invalidDomain = "external-direct-ip";
-    }
-
-    let domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
-    let domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes("default"));
-    domConfProxy = config.proxy.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain)) ?? domConfProxy;
-    domConfStub = config.stub.find(({ host: hosts, enabled = true }) => enabled && hosts.includes(invalidDomain ? invalidDomain : domain)) ?? domConfStub;
 
     // TODO: this needs to be reworked to be less resource intensive for faster proxying
     // if (!domConfProxy && !domConfStub) { // No configuration found
@@ -328,7 +345,7 @@ const webRequest = (req, res) => {
         res.writeHead(301, { 'Location': `https://${domain}${req.url}` });
         res.end();
         return;
-    } else if ((!(domConfProxy?.secure || domConfStub?.secure)) && req.socket.localPort === 443) {
+    } else if ((!(domConfProxy?.secure || domConfStub?.secure)) && req.socket.localPort === 443 && !domConfProxy?.ssl?.bypass) {
         res.writeHead(301, { 'Location': `http://${domain}${req.url}` });
         res.end();
         return
@@ -394,6 +411,10 @@ const webRequest = (req, res) => {
 
         }
 
+        /**
+         * Proxy options for http-proxy
+         * @type {pkg.ServerOptions}
+         */
         const proxyOptions = {
             target: domConfProxy.target,
             xfwd: true,
@@ -410,16 +431,8 @@ const webRequest = (req, res) => {
         }
 
         if (config.anubis?.enabled && (config.anubis?.alwaysOn || domConfProxy?.anubis)) {
-            import('./anubis.js').then(({ anubisBindPort }) => {
-                return proxy.web(req, res, {
-                    target: `http://localhost:${anubisBindPort}/`,
-                    headers: {
-                        "X-Real-Ip": ip,
-                        "X-NPM-Request": Buffer.from(JSON.stringify(proxyOptions)).toString('base64')
-                    },
-                    ws: domConfProxy.websocket,
-                    websocket: domConfProxy.websocket,
-                });
+            import('./anubis.js').then(({ anubisHandoff }) => {
+                return anubisHandoff(req, res, ip, domConfProxy, proxyOptions);
             });
         } else {
             return proxy.web(req, res, proxyOptions);

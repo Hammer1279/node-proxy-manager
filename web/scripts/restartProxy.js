@@ -3,16 +3,18 @@ import { readFile, writeFile } from 'fs/promises';
 import { IncomingMessage, ServerResponse } from 'http';
 import { join } from 'path';
 import { request } from 'http';
+import { ipc } from '../server.js';
 
 async function generateSecret() {
     const secret = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    if (!existsSync(join(process.cwd(), 'auth.json'))) {
-        await writeFile(join(process.cwd(), 'auth.json'), JSON.stringify([secret], null, 3));
-        return secret;
-    }
-    const authFile = JSON.parse(await readFile(join(process.cwd(), 'auth.json'), 'utf-8'));
-    authFile.push(secret);
-    await writeFile(join(process.cwd(), 'auth.json'), JSON.stringify(authFile, null, 3));
+    ipc.write(Buffer.from([0xC0, 0xCC, ...Buffer.from(secret, 'utf-8'), 0xC0, 0xCC]));
+    // if (!existsSync(join(process.cwd(), 'auth.json'))) {
+    //     await writeFile(join(process.cwd(), 'auth.json'), JSON.stringify([secret], null, 3));
+    //     return secret;
+    // }
+    // const authFile = JSON.parse(await readFile(join(process.cwd(), 'auth.json'), 'utf-8'));
+    // authFile.push(secret);
+    // await writeFile(join(process.cwd(), 'auth.json'), JSON.stringify(authFile, null, 3));
     return secret;
 }
 

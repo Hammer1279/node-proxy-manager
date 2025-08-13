@@ -5,6 +5,14 @@ export default async (page, { req, res, next }, config) => {
     const packageFile = await readFile(join(process.cwd(), 'package.json'), 'utf-8');
     const packageJson = JSON.parse(packageFile);
 
+    let parsedConfig;
+    const configFile = await readFile(join(process.cwd(), 'config.json'), 'utf-8');
+    try {
+        parsedConfig = JSON.stringify(JSON.parse(configFile), null, 4)
+    } catch (error) {
+        parsedConfig = configFile; // Fallback to raw config if parsing fails
+    }
+
     let totalDomains = 0;
     for (const domainGroup of config.acme.domains) {
         totalDomains += domainGroup.length;
@@ -22,6 +30,7 @@ export default async (page, { req, res, next }, config) => {
         certCount2: totalDomains,
         ports: config.ports,
         username: req.auth.user,
-        config: JSON.stringify(config, null, 4),
+        // config: JSON.stringify(config, null, 4),
+        config: parsedConfig,
     };
 }

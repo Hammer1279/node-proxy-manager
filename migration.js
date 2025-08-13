@@ -104,21 +104,38 @@ const updates = [
         key: "httpsPorts",
         to: null // Remove this property after migration
     },
-    // add initial anubis config, as of July, this is not yet implemented
-    // this version should not be published until this is all done (I've had enough of the ai bots bringing my websites down)
+    // add initial anubis config
     {
         key: null, // This is a new key, not a migration
         to: "anubis",
         transform: (value, data) => {
             // Ensure anubis is an object with default values
             return {
-                "_note": "not implemented yet",
-                "enabled": false,
+                "enabled": true,
+                "alwaysOn": false,
                 "configPath": "/etc/anubis",
                 "runtimePath": "/run/anubis",
-                "profile": "default",
-                "useUnixSocket": true
+                "profile": "default"
             };
+        }
+    },
+    {
+        key: null, // This is a new key, not a migration
+        to: "sock",
+        transform: (value, data) => {
+            return "/run/node-proxy.sock"; // Default socket path
+        }
+    },
+    // Version 0.4.0-dev ONLY, DELETE THIS IN FINAL RELEASE
+    {
+        key: "anubis",
+        to: "anubis",
+        transform: (value, data) => {
+            // Ensure anubis is an object with default values
+            delete value.useUnixSocket; // unused variable
+            delete value._note;
+            value.alwaysOn = value.alwaysOn || false; // Default to false
+            return value;
         }
     }
     // Version X.X.X
@@ -140,19 +157,19 @@ export default async function updateConfigRefs(file) {
                     const keys = key.split('.');
                     const lastKey = keys.pop();
                     const source = keys.reduce((obj, k) => obj?.[k], data);
-    
+
                     if (source && lastKey in source) {
                         const value = source[lastKey];
-    
+
                         // Apply transformation if specified
                         if (transform) {
                             const transformedValue = transform(value, data);
-    
+
                             if (to) {
                                 const toKeys = to.split('.');
                                 const toLastKey = toKeys.pop();
                                 const target = toKeys.reduce((obj, k) => obj[k] ??= {}, data);
-    
+
                                 // Merge transformed value into the target
                                 if (typeof transformedValue === 'object' && !Array.isArray(transformedValue)) {
                                     target[toLastKey] = { ...target[toLastKey], ...transformedValue };
@@ -161,7 +178,7 @@ export default async function updateConfigRefs(file) {
                                 }
                             }
                         }
-    
+
                         // Remove the original property if `to` is null
                         if (to === null) {
                             delete source[lastKey];

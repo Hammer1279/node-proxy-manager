@@ -18,7 +18,7 @@ import config from '../config.json' with {
 };
 import { ipcClient } from '../ipc.js';
 
-const ipc = ipcClient(config, "management");
+export const ipc = ipcClient(config, "management");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -119,6 +119,11 @@ app.use(async (req, res, next) => {
             if (entry.count >= rateSettings.maxAuthRequests) {
                 return res.setHeader("Retry-After", Math.floor((cache.getTtl("ratelimit-" + req.realIp) - Date.now()) / 1000)).sendStatus(429);
             }
+        }
+        // lockdown mode if too many concurrent attacks are happening
+        if (cache.keys().filter(key => key.startsWith("ratelimit-")).length >= (rateSettings.maxConcurrentFails || 10)) {
+            const retryAfterDate = new Date(Date.now() + 5 * 60 * 1000).toUTCString();
+            return res.setHeader("Retry-After", retryAfterDate).sendStatus(503);
         }
     }
     next();
@@ -388,17 +393,38 @@ let settings = {
 //     }
 // });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    // at this point we presume the user has checked auth already
-    console.error('Error:', err);
-    // res.status(500).json({
-    //     error: 'Internal Server Error',
-    //     message: err.message,
-    //     stack: err.stack
-    // });
-    res.status(500).send(`<title>ERR: ${err.message}</title><h1>500: Internal Server Error</h1><p>${err.stack.replaceAll('\n', "<br />")}</p>`);
-});
+app.use(
+    /**
+     * Error handling middleware
+     * @param {Error} err - The error object
+     * @param {import("express").Request} req - The request object
+     * @param {import("express").Response} res - The response object
+     * @param {import("express").NextFunction} next - The next middleware function
+     * @returns {void}
+     */
+    (err, req, res, next) => {
+        // at this point we presume the user has checked auth already
+        console.error('Error:', err);
+        // res.status(500).json({
+        //     error: 'Internal Server Error',
+        //     message: err.message,
+        //     stack: err.stack
+        // });
+        if (req.headers?.accept?.includes("text/html")) {
+            res.status(500).send(`
+<title>ERR: ${err.message}</title>
+<h1>500: Internal Server Error</h1>
+<p>${err.stack.replaceAll('\n', "<br />")}</p>
+<ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/config/edit">Modify Config</a></li>
+</ul>`);
+        } else if (req.headers?.accept?.includes("application/json")) {
+            res.status(500).json(err);
+        } else {
+            res.sendStatus(500);
+        }
+    });
 
 app.listen(config.management.port, () => {
     console.log(`Management server listening on port ${config.management.port}`);
