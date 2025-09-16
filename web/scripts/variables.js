@@ -14,8 +14,12 @@ export default async (page, { req, res, next }, config) => {
     }
 
     let totalDomains = 0;
-    for (const domainGroup of config.acme.domains) {
-        totalDomains += domainGroup.length;
+    let certCount = 0;
+    if (config.acme.enabled) {
+        for (const domainGroup of config.acme.domains) {
+            totalDomains += domainGroup.length;
+        }
+        certCount = config.acme.domains.length;
     }
 
     return {
@@ -26,7 +30,7 @@ export default async (page, { req, res, next }, config) => {
         proxyCount: config.proxy.filter(p => !p.redirect).length,
         redirectCount: config.proxy.filter(p => p.redirect).length,
         stubCount: config.stub.length,
-        certCount: config.acme.domains.length,
+        certCount: certCount,
         certCount2: totalDomains,
         ports: config.ports,
         username: req.auth.user,

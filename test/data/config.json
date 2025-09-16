@@ -4,13 +4,14 @@
         7080,
         7443
     ],
-    "httpPorts": [
-        7080
-    ],
-    "httpsPorts": [
-        7443
-    ],
-    "timeout": 30000,
+    "httpPorts": 7080,
+    "httpsPorts": 7443,
+    "sock": "/run/node-proxy-test.sock",
+    "http2": false,
+    "anubis": {
+        "enabled": false
+    },
+    "timeout": 1000,
     "unconfiguredCloseNoResponse": true,
     "cleanAuthFile": false,
     "maintenance": false,
@@ -20,6 +21,9 @@
         "port": 7081,
         "username": "admin",
         "password": "admin",
+        "accounts": {
+            "admin": "admin"
+        },
         "logging": false,
         "logFile": "logs/server.log",
         "trustedProxies": [],
@@ -33,7 +37,7 @@
     },
     "testserver": {
         "_note": "This is a test server, it will respond with a 200 OK, if enabled",
-        "enabled": false,
+        "enabled": true,
         "websocket": true,
         "_fail": "if enabled, the test server will not respond causing a timeout",
         "fail": false,

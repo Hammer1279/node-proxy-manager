@@ -33,7 +33,7 @@ export default async (page, { req, res, next }, config) => {
             enabled: values.enabled ?? true,
             status: values.status ?? 200,
             status_message: STATUS_CODES[values.status] ?? "UNKNOWN",
-            message: values.message ?? "OK",
+            message: values.message ?? STATUS_CODES[values.status] ?? "OK",
             description: values.description || "No description available"
         })),
         acme: {

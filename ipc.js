@@ -3,6 +3,11 @@ import { unlinkSync } from 'node:fs';
 
 // ipc communication to stop the zombie process issue
 
+/**
+ * Create an IPC server for inter-process communication
+ * @param {Object} config 
+ * @returns {import('net').Socket}
+ */
 export const ipcServer = function (config) {
     try {
         unlinkSync(config.sock); // Remove old socket file if it exists
@@ -14,6 +19,10 @@ export const ipcServer = function (config) {
      * @type {Set<import('net').Socket>}
      */
     const processes = new Set();
+    /**
+     * IPC server instance
+     * @type {import('net').Server}
+     */
     const ipc = createServer((socket) => {
         processes.add(socket);
         socket.on('data', (data) => {
@@ -64,6 +73,7 @@ export const ipcServer = function (config) {
             buf.writeUInt16BE(57005, 0); // 57005 == 0xDEAD
             proc.write(buf);
         });
+        ipc.close();
         setInterval(() => {
             if (processes.size == 0) {
                 process.exit(0);
@@ -72,7 +82,7 @@ export const ipcServer = function (config) {
     });
     ipc.on("close", () => {
         processes.clear();
-        unlinkSync(config.sock);
+        // unlinkSync(config.sock);
     });
     ipc.on("error", (err) => {
         console.error('MAIN: IPC server error:', err);
@@ -87,8 +97,8 @@ export const ipcServer = function (config) {
 
 /**
  * IPC client for subprocesses
- * @param {*} config 
- * @param {*} name 
+ * @param {Object} config 
+ * @param {string} name 
  * @returns {import('net').Socket}
  */
 export const ipcClient = function (config, name = "FIXME") {

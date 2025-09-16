@@ -46,7 +46,7 @@
                 </h5>
                 <p class="card-text">
                 Enabled: {{#if enabled}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
-                Maintenance: {{#if maintenance}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
+                Maintenance: {{#if maintenance}}<i class="fa-solid fa-square-check text-yellow"></i>{{else}}<i class="fa-solid fa-square-xmark text-success"></i>{{/if}}<br>
                 Target: <a href="{{target}}" target="_blank">{{target}}</a><br>
                 {{!-- Redirect Only Mode: {{#if redirect}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
                 Temporary Redirect: {{#if redirectTemp}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br> --}}
@@ -56,6 +56,10 @@
                 Custom Headers: {{#if headers}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
                 </p>
                 <p class="card-text">Description: {{description}}</p>
+
+                {{#if acmebypass}}
+                <p class="text-warning">ACME Bypassed, you can only manually edit this entry via <a href="/config" class="text-warning">config editor.</a></p>
+                {{/if}}
 
                 {{!-- Hide buttons when disabled --}}
                 {{!-- {{#unless write_protected}}<a href="/proxy/{{id}}/edit" class="btn btn-primary">Edit</a>{{/unless}} --}}
@@ -68,7 +72,7 @@
                 {{/unless}} --}}
 
                 {{!-- Disable buttons when disabled --}}
-                <a href="/proxy/{{id}}/edit" class="btn btn-primary{{#if write_protected}} disabled{{/if}}" {{#if write_protected}}disabled{{/if}}>Edit</a>
+                <a href="/proxy/{{id}}/edit" class="btn btn-primary{{#if write_protected}} disabled{{/if}}{{#if acmebypass}} disabled{{/if}}"{{#if write_protected}}disabled{{/if}}{{#if acmebypass}}disabled{{/if}}>Edit</a>
                 <a href="/proxy/{{id}}/toggle/maintenance" class="btn btn-info">Toggle Maintenance</a>
                 <a href="/proxy/{{id}}/toggle" class="btn btn-warning{{#if write_protected}} disabled{{/if}}" {{#if write_protected}}disabled{{/if}}>Toggle</a>
                 <a href="#" onclick="deleteItem('{{id}}', event)" class="btn btn-danger{{#if write_protected}} disabled{{/if}}{{#if special}} disabled{{/if}}" {{#if write_protected}}disabled{{/if}}{{#if special}}disabled{{/if}}>Delete</a>

@@ -5,7 +5,7 @@
   "description": "An NodeJS alternative to Nginx Proxy Manager that is hopefully more reliable.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha \"./test/**/*.js\"",
     "dev": "npm run dev:run",
     "dev:run": "nodemon index.js -e .ejs,.mustache,.js,.html,.json,.jsonc --ignore logs/ --ignore certs/ --ignore node_modules/ --ignore .git/ --ignore .vscode/ --ignore .idea/ --ignore .DS_Store/ --ignore .gitignore --ignore config.json",
     "dev:cfg": "cp config.json config.example.json",
@@ -37,7 +37,9 @@
   },
   "devDependencies": {
     "mocha": "^11.1.0",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "supertest": "^7.1.4",
+    "ht-web-framework": "file:../ht-web-framework"
   },
   "type": "module"
 }

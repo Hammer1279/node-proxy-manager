@@ -55,19 +55,20 @@ export default async (page, { req, res, next }, config) => {
                         res.end();
                         return { done: true };
                     }
-                    item[param] = parseInt(element);   
+                    item[param] = parseInt(element);
                 } else if (typeof item[param] === "string") {
                     item[param] = element;
                 } else if (typeof item[param] === "boolean") {
                     if (typeof element == "object") {
                         element = element[element.length - 1];
+                        // return res.status(400).send("Invalid boolean value, please report this issue to the Github repository.");
                     }
                     item[param] = element === "true" || element == "on";
                 } else if (Array.isArray(item[param])) { // handle case for arrays
                     item[param] = Array.isArray(element) ? element : element.split(',');
                 } else if (typeof item[param] === "object") {
                     if (param == "ssl") {
-                        const {key, cert, ca: caRaw} = element;
+                        const { key, cert, ca: caRaw } = element;
                         const ca = caRaw.split(',');
                         item[param] = { key, cert, ca };
                         continue;
@@ -134,6 +135,7 @@ export default async (page, { req, res, next }, config) => {
                         // Convert "on"/"true" to true, else false
                         if (typeof value === "object") {
                             item[key] = value[value.length - 1] === "true" || value[value.length - 1] === "on";
+                            // return res.status(400).send("Invalid boolean value, please report this issue to the Github repository.");
                         } else {
                             item[key] = value === "true" || value === "on";
                         }
@@ -161,7 +163,7 @@ export default async (page, { req, res, next }, config) => {
             return { done: true };
         } else if (storageType == "stub") {
             const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
-            
+
             // TODO: rework stub like proxy if it works
             const item = req.body;
             runtimeConfig[storageType].push({

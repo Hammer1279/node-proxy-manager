@@ -3,7 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import pkg from 'http-proxy';
 const { createProxyServer } = pkg;
-import { createServer as createServerHttp, IncomingMessage, ServerResponse, request as httpRequest } from 'node:http';
+import { createServer as createServerHttp, IncomingMessage, ServerResponse, request as httpRequest, STATUS_CODES } from 'node:http';
 import { createServer as createServerHttps, request as httpsRequest } from 'node:https';
 import { createSecureServer as createServerHttp2 } from 'node:http2';
 import { containsCidr } from "cidr-tools";
@@ -335,7 +335,7 @@ const webRequest = (req, res) => {
 
     if (domConfStub) {
         res.writeHead(domConfStub.status || 200, domConfStub.headers || { "Content-Type": domConfStub?.contentType ?? "text/plain", ...(domConfStub?.headers ?? {}) });
-        res.end(domConfStub.message || 'OK');
+        res.end(domConfStub.message ?? STATUS_CODES[domConfStub.status ?? 200] ?? 'OK');
         return;
     } else if (domConfProxy?.maintenance) {
         res.writeHead(503, { 'Content-Type': 'text/plain' });
@@ -408,7 +408,12 @@ const webRequest = (req, res) => {
         // console.debug('X-Forwarded-For:', ip);
 
         if (domConfProxy?.http2) {
+            // no http2 support yet
+            return res.writeHead(500, { 'Content-Type': 'text/plain' }).end('Proxy Misconfigured');
+        }
 
+        if (!domConfProxy?.target) {
+            return res.writeHead(502, { 'Content-Type': 'text/plain' }).end('Bad Gateway');
         }
 
         /**
