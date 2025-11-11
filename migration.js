@@ -137,7 +137,18 @@ const updates = [
             value.alwaysOn = value.alwaysOn || false; // Default to false
             return value;
         }
-    }
+    },
+    // Version 0.4.0-dev_b251111h1 - Hotfix add missing config settings
+    {
+        key: "management",
+        to: "management",
+        transform: (value, data) => {
+            // Add missing views and static entries if not present
+            if (!value.views) value.views = "web/views";
+            if (!value.static) value.static = "web/public";
+            return value;
+        }
+    },
     // Version X.X.X
     // activate this in the next version (so that git does not delete values before migration)
     // {
