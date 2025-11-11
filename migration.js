@@ -26,16 +26,17 @@ const updates = [
         to: null // Remove this property after migration
     },
     // Version 0.3.4
-    {
-        key: "management.trustedProxies",
-        to: "trustedProxies",
-        transform: (value, data) => {
-            if (data.management.trustedProxies) {
-                return data.management.trustedProxies;
-            }
-            return [];
-        }
-    },
+    // reverted in 0.4.0
+    // {
+    //     key: "management.trustedProxies",
+    //     to: "trustedProxies",
+    //     transform: (value, data) => {
+    //         if (data.management.trustedProxies) {
+    //             return data.management.trustedProxies;
+    //         }
+    //         return [];
+    //     }
+    // },
     {
         key: "management.trustedProxies",
         to: null // Remove this property after migration
@@ -148,6 +149,20 @@ const updates = [
             if (!value.static) value.static = "web/public";
             return value;
         }
+    },
+    {
+        key: "trustedProxies",
+        to: "management.trustedProxies",
+        transform: (value, data) => {
+            if (data.trustedProxies) {
+                return data.trustedProxies;
+            }
+            return [];
+        }
+    },
+    {
+        key: "trustedProxies",
+        to: null // Remove this property after migration
     },
     // Version X.X.X
     // activate this in the next version (so that git does not delete values before migration)
