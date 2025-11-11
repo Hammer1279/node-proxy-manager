@@ -1,6 +1,6 @@
 <h1 class="text-center">Edit: Stub {{id}}</h1>
 <p><strong>If a setting does not apply correctly, it must be added in the config file first or the rule must be recreated in the web interface.</strong></p>
-{{! <p>Edit 'em all!</p> }}
+{{!-- <p>Edit 'em all!</p> --}}
 <div class="row">
     <div class="col">
     <form id="stubForm" class="needs-validation" method="POST" action="/{{prefix}}/{{id}}" novalidate>
@@ -12,7 +12,7 @@
 
         <div class="mb-3 form-check">
             <input type="hidden" name="enabled" value="off">
-            <input type="checkbox" class="form-check-input" id="enabled" name="enabled" value="on" {{#item.enabled}}checked{{/item.enabled}}>
+            <input type="checkbox" class="form-check-input" id="enabled" name="enabled" value="on" {{#if item.enabled}}checked{{/if}}>
             <label class="form-check-label" for="enabled">Enabled</label>
         </div>
 
@@ -33,7 +33,7 @@
 
         <div class="mb-3 form-check">
             <input type="hidden" name="secure" value="off">
-            <input type="checkbox" class="form-check-input" id="secure" name="secure" {{#item.secure}}checked{{/item.secure}}>
+            <input type="checkbox" class="form-check-input" id="secure" name="secure" {{#if item.secure}}checked{{/if}}>
             <label class="form-check-label" for="secure">Force TLS/SSL (HTTPS)</label>
         </div>
 

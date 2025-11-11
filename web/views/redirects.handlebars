@@ -57,7 +57,7 @@
                 <a href="/redirects/{{id}}/edit" class="btn btn-primary{{#if write_protected}} disabled{{/if}}" {{#if write_protected}}disabled{{/if}}>Edit</a>
                 <a href="/redirects/{{id}}/toggle/maintenance" class="btn btn-info">Toggle Maintenance</a>
                 <a href="/redirects/{{id}}/toggle" class="btn btn-warning{{#if write_protected}} disabled{{/if}}" {{#if write_protected}}disabled{{/if}}>Toggle</a>
-                <a href="#" onclick="deleteItem('{{id}}', event)" class="btn btn-danger{{#if write_protected}}{{else}}{{#if special}} disabled{{/if}}{{/if}}" {{#if write_protected}}disabled{{else}}{{#if special}}disabled{{/if}}{{/if}}>Delete</a>
+                <a href="#" onclick="deleteItem('{{id}}', event)" class="btn btn-danger{{#if write_protected}} disabled{{/if}}{{#if special}} disabled{{/if}}" {{#if write_protected}}disabled{{/if}}{{#if special}}disabled{{/if}}>Delete</a>
                 <script>
                 function deleteItem(id, event) {
                     event.preventDefault();

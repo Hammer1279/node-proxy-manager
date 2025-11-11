@@ -47,6 +47,16 @@
                 <p class="card-text">
                 Enabled: {{#if enabled}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
                 Maintenance: {{#if maintenance}}<i class="fa-solid fa-square-check text-yellow"></i>{{else}}<i class="fa-solid fa-square-xmark text-success"></i>{{/if}}<br>
+                Anubis Protected: 
+                {{#if anubis}}
+                    <i class="fa-solid fa-square-check text-success"></i>
+                {{else}}
+                    {{#if globalAnubis}}
+                        <i class="fa-solid fa-square-minus text-{{#if anubis}}success{{else}}yellow{{/if}}"></i> (Enabled Globally)
+                    {{else}}
+                        <i class="fa-solid fa-square-xmark text-danger"></i>
+                    {{/if}}
+                {{/if}}<br>
                 Target: <a href="{{target}}" target="_blank">{{target}}</a><br>
                 {{!-- Redirect Only Mode: {{#if redirect}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br>
                 Temporary Redirect: {{#if redirectTemp}}<i class="fa-solid fa-square-check text-success"></i>{{else}}<i class="fa-solid fa-square-xmark text-danger"></i>{{/if}}<br> --}}

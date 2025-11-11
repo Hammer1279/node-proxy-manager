@@ -22,6 +22,7 @@ export default async (page, { req, res, next }, config) => {
         proxies: proxyWithIds.filter(values => !values.redirect).map(values => ({
             ...values,
             acmebypass: values.ssl?.bypass ?? false,
+            globalAnubis: runtimeConfig.anubis.enabled && (runtimeConfig.anubis.alwaysOn),
         })),
         redirects: proxyWithIds.filter(values => values.redirect).map(values => ({
             ...values,

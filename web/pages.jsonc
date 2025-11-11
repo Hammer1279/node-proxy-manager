@@ -36,6 +36,7 @@
                     "variables"
                 ],
                 "settings": {
+                    "type": "handlebars",
                     "stylesheets": [],
                     "scripts": [],
                     "widgets": [],
@@ -158,6 +159,7 @@
                     "noDetails"
                 ],
                 "settings": {
+                    "type": "handlebars",
                     "stylesheets": [],
                     "scripts": [
                         "specials.js"
@@ -351,6 +353,7 @@
         }
     ],
     "settings": {
+        "type": "mustache", // default template engine
         "title": "NPM Management Console", // tab title
         "headerTitle": "Management Console", // title in navbar
         // base_* are the default stylesheets and scripts (client side) to load on every page
