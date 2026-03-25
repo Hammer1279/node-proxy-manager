@@ -1,6 +1,5 @@
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { isNumber } from 'util';
 
 export default async (page, { req, res, next }, config) => {
     const runtimeConfig = JSON.parse(await readFile(join(".", 'config.json'), 'utf-8'));
