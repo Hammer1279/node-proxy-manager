@@ -1,6 +1,7 @@
 // Anubis Middleware for Node Proxy Manager
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { publishSubService } from './bonjour.js';
 
 
 // this module wont support hot reloading
@@ -12,6 +13,8 @@ import { proxy } from './proxy.js';
 const profileDefinition = await readFile(`${config.anubis.configPath}/${config.anubis.profile}.env`, { encoding: 'utf-8' });
 export const anubisBindPort = profileDefinition.match(/BIND=:(\d+)/)?.[1] || '8923';
 const anubisTargetPort = profileDefinition.match(/TARGET=([^ ]+)/)?.[1]?.match(/:(\d+)/)?.[1] || '3000';
+
+publishSubService("anubis", Number.parseInt(anubisBindPort));
 
 if (!/^https?:\/\/localhost:\d+$/.test(profileDefinition.match(/TARGET=(.*)/)?.[1]?.trim())) {
     throw new Error("Anubis target must be a localhost address with a port, e.g. 'localhost:3000'");

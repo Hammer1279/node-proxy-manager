@@ -46,6 +46,20 @@ On first migration since 0.3.4, BACK UP YOUR `config.json` file by copying it wi
 
 You can check the status with `pm2 status` and restart the application with `pm2 restart all` (Or instead of `all` you can use the index number found in status).
 
+## Integrating in other Applications (WIP)
+
+> This is still WIP, anything here is subject to change.
+
+Node-Proxy-Manager now also includes a Autodiscovery / Zeroconf for appications on the local network.
+
+This is done via Bonjour, and requires the `subtype` `"npmautoconfig"` to be included. If this is set, NPM will check the `txt` for a key `npmautoconfig` for the configuration, this should be a JSON object as `string` with the following values:
+
+- `version` (string): the version of the config file format (currently only `v1` is supported)
+- `type` (string): the type of record (currently only `proxy` is supported, this option is potentially going to get removed)
+- `domain` (string): the domain to create a record for
+- `description` (string?): the description for the record (optional)
+- `cert` (object?): config for the certificate manager (in the future, currently it is still optional since the certificate manager is not yet done and the created domain has to be included in the ACME Manager by hand)
+
 ## Can I rely on this project to not shut down and get abandoned soon?
 Despite my repositories mostly beeing archived, I plan on keeping this updated as long as I can. My own Websites all depend on this software, so I always have a incentive to develop this further and keep it maintained to the best of my abilities.
 

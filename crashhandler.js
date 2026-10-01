@@ -126,12 +126,16 @@ function startServer(httpPort, httpsPort) {
  * Handle application crashes and restart fallback servers if necessary
  * @param {string} application name of the application that crashed, either "proxy" or "management" for restart logic for now
  * @param {number} code exit code of the crashed application
- * @deprecated this is very buggy and unreliable, just let the process crash
+ * @deprecated this is very buggy and unreliable, correct exit now handled by the ipc exit system since V4
  */
 export default function handleCrash(application, code) {
     if (config.fallback.disable) {
+        return; // completely disable crash handler, since V4
         console.info(`${application} exited with code ${code}. Stopping main process.`);
         process.exit(code);
+    } else {
+        console.warn("WARNING: Crash Handler is deprecated and unreliable, use at your own risk. Please use the IPC exit system instead.");
+        // console.warn("WARNING: Crash Handler will be removed in future versions. Use the IPC exit system instead or build a custom crash handler.");
     }
 
     switch (application) {

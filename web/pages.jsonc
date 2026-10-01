@@ -354,16 +354,20 @@
     ],
     "settings": {
         "type": "mustache", // default template engine
+        "disableBuiltinBase": true, // ignore base.mustache from framework, if false, base layout is loaded twice? (might come from migration, needs debugging)
         "title": "NPM Management Console", // tab title
         "headerTitle": "Management Console", // title in navbar
         // base_* are the default stylesheets and scripts (client side) to load on every page
+        // TODO: consider changing this to ht-web-framework builtins
         "base_stylesheets": [
-            "bootstrap-legacy.css",
-            "bootstrap.css",
-            "custom.css",
+            "bootstrap-legacy.css", // legacy PB UI, some parts still in use
+            "bootstrap.css", // modern UI
+            "custom.css", // modifications for NPM UI
             "../fontawesome-free-6.7.2-web/css/all.css"
         ],
-        "base_scripts": [],
+        "base_scripts": [
+            "builtin/scrollReturn.js" // return scroll on page reload
+        ],
         // following scripts are backend scripts to load on every page
         "scripts": [
             "headerContext"
@@ -372,6 +376,6 @@
         "widgets": [], // not implemented in this version, deprecated
         "username": "Mr. Anonymous",
         "default_language": "en", // cannot be changed in this version
-        "timezone": "local" // cannot be changed in this version
+        "timezone": "local" // cannot be changed in this version,
     }
 }

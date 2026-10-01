@@ -26,31 +26,34 @@ async function generateSecret() {
  */
 export const post = async (page, { req, res, next }, config) => {
     const checkValue = Math.random().toString(36).substring(2, 8);
+    const authToken = await generateSecret();
+    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for the secret to be registered
 
     // Send reload request to proxy server
-    request({
-        hostname: "localhost",
-        path: "/.well-known/reload",
-        method: "POST",
-        auth: await generateSecret(),
-        port: config.ports[0],
-        headers: {
-            'Content-Type': 'text/plain',
-            'Content-Length': checkValue.length
-        }
-    }, (response) => {
-        // process.send("reload");
-        console.log(`Reload response status: ${response.statusCode}`);
-        if (response.statusCode !== 200) {
-            console.error('Failed to reload proxy server:', response.statusMessage);
-            res.writeHead(500);
-            res.end('Failed to reload proxy server: ' + response.statusMessage);
-            return { done: true };
-        }
-    }).end(checkValue, 'utf-8');
+    await new Promise((resolve, reject) => {
+        request({
+            hostname: "localhost",
+            path: "/.well-known/reload",
+            method: "POST",
+            auth: authToken,
+            port: config.ports[0],
+            headers: {
+                'Content-Type': 'text/plain',
+                'Content-Length': checkValue.length
+            }
+        }, (response) => {
+            // process.send("reload");
+            console.log(`Reload response status: ${response.statusCode}`);
+            if (response.statusCode !== 200) {
+                console.error('Failed to reload proxy server:', response.statusMessage);
+                res.writeHead(500);
+                res.end('Failed to reload proxy server: ' + response.statusMessage);
+                return { done: true };
+            }
+        }).end(checkValue, 'utf-8');
+    });
 
-
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 500)); // Wait for the proxy server to reload
     await new Promise((resolve, reject) => {
         const req = request({
             hostname: 'localhost',

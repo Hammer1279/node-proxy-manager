@@ -19,6 +19,7 @@ import { fork } from 'child_process';
 import handleCrash from './crashhandler.js';
 import { getCertificate } from './CertManager.js';
 import { ipcServer } from './ipc.js';
+import autodiscovery, { publishSubService } from './bonjour.js'
 
 // import config from './config.json' with {
 //     type: "json"
@@ -134,6 +135,7 @@ if (config.management.enabled) {
 
 // Test server
 if (config.testserver.enabled) {
+    publishSubService("testserver", config.testserver.port, config.testserver);
     const testServer = createServerHttp((req, res) => {
         console.debug('Test server request', req.url);
         console.debug(req.headers);
@@ -212,6 +214,11 @@ if (config.testserver.enabled) {
     }
 }
 
+const authClientFork = fork("./authClient.js");
+authClientFork.on("exit", (code) => {
+    console.warn(`Auth client exited with code ${code}`);
+});
+
 // Handle SIGINT (Ctrl+C) to gracefully shut down all child processes
 process.on('SIGINT', () => {
     console.log('\nReceived SIGINT signal. Shutting down all processes...');
@@ -234,16 +241,25 @@ function shutdown(exitCode, error) {
     console.log('Shutting down processes...');
     ipc.emit("stop");
     // rest is superseded by ipc stop, but kept for safety
-    try {
-        killACME();
-    } catch (error) {
-        console.error("Error killing ACME process:", error);
-    }
-    try {
-        killWebServer();
-    } catch (error) {
-        console.error("Error killing web server process:", error);
-    }
-    console.error(error);
-    process.exit(exitCode);
+    setTimeout(() => {
+        try {
+            killACME();
+        } catch (error) {
+            console.error("Error killing ACME process:", error);
+        }
+        try {
+            killWebServer();
+        } catch (error) {
+            console.error("Error killing web server process:", error);
+        }
+        try {
+            authClientFork.kill(exitCode);
+        } catch (error) {
+            console.error("Error killing auth client process:", error);
+        }
+        if (error) {
+            console.error(error);
+        }
+        process.exit(exitCode);
+    }, 10000); // time to wait before forcefully terminating processes
 }

@@ -116,7 +116,7 @@ proxy.on('error', (err, req, res) => {
     // Check if `res` is an HTTP response object
     if (res && typeof res.writeHead === 'function') {
         console.error(err);
-        if (['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET'].includes(err.code)) {
+        if (['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT'].includes(err.code)) {
             res.writeHead(502, { 'Content-Type': 'text/plain' });
             res.end('Bad Gateway');
         } else {
