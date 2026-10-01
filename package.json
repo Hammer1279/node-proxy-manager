@@ -26,7 +26,7 @@
     "express-basic-auth": "^1.2.1",
     "express-handlebars": "^8.0.1",
     "greenlock": "^4.0.4",
-    "ht-web-framework": "file:../ht-web-framework",
+    "ht-web-framework": "^3.0.1",
     "http-proxy": "^1.18.1",
     "jsonc-parser": "^3.3.1",
     "morgan": "^1.10.0",
