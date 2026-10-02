@@ -164,6 +164,18 @@ const updates = [
         key: "trustedProxies",
         to: null // Remove this property after migration
     },
+    // Version 0.4.0-dev_b261001h1 - add new bonjour config
+    {
+        key: null,
+        to: "autodiscover",
+        transform: (value, data) => {
+            return {
+                "enabled": false,
+                "publishOwnServices": true,
+                "rescanInterval": 10000
+            }
+        }
+    }
     // Version X.X.X
     // activate this in the next version (so that git does not delete values before migration)
     // {
